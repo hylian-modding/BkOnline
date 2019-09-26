@@ -1,0 +1,13 @@
+{
+  "name": "BkOnline",
+  "version": "1.0.0",
+  "description": "",
+  "main": "BkOnline.js",
+  "author": "SpiceyWolf, Mittenz",
+  "credits": "denoflions, MelonSpeedruns",
+  "license": "GPL3",
+  "core": "BanjoKazooie",
+  "dry": {
+    "extends": "./ModLoader64/package-dry.json"
+  }
+}
