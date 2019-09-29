@@ -471,23 +471,23 @@ export class BkOnline implements IPlugin {
 
     // Mumbos Mountain
     id = API.GameBMP.TOKENS_PAID_MM;
-    if (bufData[Math.floor(id / 8)] & (1 << id % 8)) count += 5;
+    if (bufData[Math.floor(id / 8)] & (1 << (id % 8))) count += 5;
 
     // Mad Monster Mansion
     id = API.GameBMP.TOKENS_PAID_MMM;
-    if (bufData[Math.floor(id / 8)] & (1 << id % 8)) count += 20;
+    if (bufData[Math.floor(id / 8)] & (1 << (id % 8))) count += 20;
 
     // Freezeezy Peak
     id = API.GameBMP.TOKENS_PAID_FP;
-    if (bufData[Math.floor(id / 8)] & (1 << id % 8)) count += 15;
+    if (bufData[Math.floor(id / 8)] & (1 << (id % 8))) count += 15;
 
     // BubbleGloop Swamp
     id = API.GameBMP.TOKENS_PAID_BGS;
-    if (bufData[Math.floor(id / 8)] & (1 << id % 8)) count += 10;
+    if (bufData[Math.floor(id / 8)] & (1 << (id % 8))) count += 10;
 
     // Click Clock Woods
     id = API.GameBMP.TOKENS_PAID_CCW;
-    if (bufData[Math.floor(id / 8)] & (1 << id % 8)) count += 25;
+    if (bufData[Math.floor(id / 8)] & (1 << (id % 8))) count += 25;
 
     this.maxTokensSpent = count;
   }
@@ -706,6 +706,10 @@ export class BkOnline implements IPlugin {
     // Initializers
     let pData: Net.SyncNumbered;
     let evt = this.core.runtime.current_level_events;
+    let crc1: number;
+    let crc2: number;
+    let i: number;
+    let tmp: number;
 
     // Detect Changes
     if (evt === this.cDB.level_events) return;
@@ -723,6 +727,19 @@ export class BkOnline implements IPlugin {
     
     this.cDB.level_events = evt;
     this.core.runtime.current_level_events = evt;
+
+    //correct CRCs in game
+    // TODO: move addresses into modloader API -- mittenz
+    crc1 = 0x5c9ec23;
+    crc2 = 0x3f2f59a;
+    for (i = 0; i < 7; i++) {
+        tmp = this.ModLoader.emulator.rdramRead8(0x80383328 + i);//CUR_SCENE_EVENTS
+        crc2 += (i+7)*tmp;
+        crc1 = (tmp*0x0d) ^ (((crc1 + tmp) & 0x7f) << 0x14) ^ (crc1 >> 7); 
+    }
+    this.ModLoader.emulator.rdramWrite32(0x80383320, crc1);
+    this.ModLoader.emulator.rdramWrite32(0x80383324, crc2);
+
     pData = new Net.SyncNumbered('SyncLevelEvents', evt, false);
     this.ModLoader.clientSide.sendPacket(pData);
   }
@@ -765,6 +782,12 @@ export class BkOnline implements IPlugin {
     // Set correct data in game and to database
     this.core.runtime.current_scene_events |= evt;
     this.cDB.level_data[level].scene[scene].events = evt;
+
+    //correct CRCs in game
+    // TODO: move addresses into modloader API -- mittenz
+    this.ModLoader.emulator.rdramWrite32(0x8037dde0, evt^0x1195e97);
+    this.ModLoader.emulator.rdramWrite32(0x8037dde4, evt^0xa84e38c8);
+    this.ModLoader.emulator.rdramWrite32(0x8037dde8, evt^0x3973e4d9);
 
     // Send changes to network
     let pData = new Net.SyncSceneNumbered(
@@ -928,19 +951,23 @@ export class BkOnline implements IPlugin {
         case API.ActorType.EMPTY_HONEYCOMB_PIECE:
           id = this.ModLoader.emulator.rdramRead32(ptr + 0x7c);
           val = this.cDB.honeycomb_flags[Math.floor(id / 8)];
-          if ((val & (1 << id % 8)) !== 0) this.delete_actor(ptr);
+          if ((val & (1 << (id % 8))) !== 0) this.delete_actor(ptr);
           break;
 
         case API.ActorType.JIGGY:
           id = this.ModLoader.emulator.rdramRead32(ptr + 0x80);
-          val = this.cDB.jiggy_flags[Math.floor(id / 8)];
-          if ((val & (1 << id % 8)) !== 0) this.delete_actor(ptr);
+          val = Math.floor(id / 8);
+          let bit = id % 8;
+          if (bit === 0) val -= 1;
+          val = this.cDB.jiggy_flags[val];
+          if ((val & (1 << (bit))) !== 0)
+            this.delete_actor(ptr);
           break;
 
         case API.ActorType.MUMBO_TOKEN:
           id = this.ModLoader.emulator.rdramRead32(ptr + 0x7c);
           val = this.cDB.mumbo_token_flags[Math.floor(id / 8)];
-          if ((val & (1 << id % 8)) !== 0) this.delete_actor(ptr);
+          if ((val & (1 << (id % 8))) !== 0) this.delete_actor(ptr);
           break;
 
         // Jinjos (By Color)
@@ -985,8 +1012,12 @@ export class BkOnline implements IPlugin {
     }
   }
 
-  delete_voxel(ptr: number) {    
-    this.ModLoader.emulator.rdramWrite8(ptr + 0x0B, 0);
+  mod_voxel(ptr: number, spawn: boolean) {  
+    if (spawn) {
+      this.ModLoader.emulator.rdramWrite8(ptr + 0x0B, 0x10);
+    } else {
+      this.ModLoader.emulator.rdramWrite8(ptr + 0x0B, 0x00);
+    }
   }
 
   despawn_voxel_item(ptr: number) {
@@ -1001,9 +1032,9 @@ export class BkOnline implements IPlugin {
                 this.ModLoader.emulator.rdramRead16(ptr + 0x08);
         // We have this item, despawn it
         if (this.cDB.level_data[level].scene[scene].notes.includes(name)) {
-          this.ModLoader.emulator.rdramWrite8(ptr + 0x0B, 0x00);
+          this.mod_voxel(ptr, false);
         } else { // We don't have this, make it visible again!
-          this.ModLoader.emulator.rdramWrite8(ptr + 0x0B, 0x10);
+          this.mod_voxel(ptr, true);
         }
         break;      
     }
@@ -1487,7 +1518,7 @@ export class BkOnline implements IPlugin {
             break;
         }
 
-        storage.jiggy_flags[Math.floor(offset / 8)] |= 1 << offset % 8;
+        storage.jiggy_flags[Math.floor(offset / 8)] |= 1 << (offset % 8);
         let pData = new Net.SyncBuffered(
           'SyncJiggyFlags',
           storage.jiggy_flags,
@@ -1604,9 +1635,8 @@ export class BkOnline implements IPlugin {
     }
 
     if (!needUpdate) return;
-      
+    
     this.cDB.game_flags = data;
-
     this.ModLoader.logger.info('[Client] Updated: {Game Flags}');
   }
 
