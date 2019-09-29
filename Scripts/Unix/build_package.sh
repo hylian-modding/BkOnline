@@ -4,7 +4,7 @@ cd ../../
 # Clone plugin to ModLoader64
 rm -r ./ModLoader64/mods/
 rm -r ./ModLoader64/build/mods/
-cp -r ./src/* ./ModLoader64/mods/
+cp -r ./src/ ./ModLoader64/mods/
 
 # Get to ModLoader64 Scripts Directory
 cd ./ModLoader64/Scripts/Unix/
