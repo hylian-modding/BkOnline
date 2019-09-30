@@ -195,6 +195,56 @@ export class BkOnline implements IPlugin {
     this.ModLoader.clientSide.sendPacket(new Net.SyncLocation(level, scene));
     this.ModLoader.logger.info('[Tick] Moved to scene[' + API.SceneType[scene] + '].');
 
+    // Remove completed jinjos from previous session!
+    if (this.cDB.level_data[level].jinjos !== 0x1f) {
+      switch (level) {
+        case API.LevelType.MUMBOS_MOUNTAIN:
+          if ((this.cDB.jiggy_flags[0] & (1 << 1)) !== 0)
+            this.cDB.level_data[level].jinjos = 0x1f;
+          break;
+
+        case API.LevelType.TREASURE_TROVE_COVE:
+            if ((this.cDB.jiggy_flags[1] & (1 << 3)) !== 0)
+              this.cDB.level_data[level].jinjos = 0x1f;
+          break;
+
+        case API.LevelType.CLANKERS_CAVERN:
+            if ((this.cDB.jiggy_flags[2] & (1 << 5)) !== 0)
+              this.cDB.level_data[level].jinjos = 0x1f;
+          break;
+          
+        case API.LevelType.BUBBLE_GLOOP_SWAMP:
+            if ((this.cDB.jiggy_flags[3] & (1 << 7)) !== 0)
+              this.cDB.level_data[level].jinjos = 0x1f;
+          break;
+
+        case API.LevelType.FREEZEEZY_PEAK:
+            if ((this.cDB.jiggy_flags[5] & (1 << 1)) !== 0)
+              this.cDB.level_data[level].jinjos = 0x1f;
+          break;
+
+        case API.LevelType.GOBEYS_VALEY:
+            if ((this.cDB.jiggy_flags[7] & (1 << 5)) !== 0)
+              this.cDB.level_data[level].jinjos = 0x1f;
+          break;
+
+        case API.LevelType.CLICK_CLOCK_WOODS:
+            if ((this.cDB.jiggy_flags[8] & (1 << 7)) !== 0)
+              this.cDB.level_data[level].jinjos = 0x1f;
+          break;
+
+        case API.LevelType.RUSTY_BUCKET_BAY:
+            if ((this.cDB.jiggy_flags[10] & (1 << 1)) !== 0)
+              this.cDB.level_data[level].jinjos = 0x1f;
+          break;
+
+        case API.LevelType.MAD_MONSTER_MANSION:
+            if ((this.cDB.jiggy_flags[11] & (1 << 3)) !== 0)
+              this.cDB.level_data[level].jinjos = 0x1f;
+          break;
+      }
+    }
+    
     // Make sure to delete already collected stuff!
     this.needDeleteActors = true;
     this.needDeleteVoxels = true;
@@ -496,15 +546,18 @@ export class BkOnline implements IPlugin {
     // Initializers
     let pData: Net.SyncBuffered;
     let i: number;
-    let count = 0;
+    let count: number;
+    let val: number;
     let needUpdate = false;
 
-    // Pre Puzzle
     bufData = this.core.save.game_flags.get_all();
     bufStorage = this.cDB.game_flags;
     count = bufData.byteLength;
     needUpdate = false;
-    for (i = 0; i < 11; i++) {
+
+    for (i = 0; i < count; i++) {
+      if (i === 4) continue; // RBB water level
+      if (i > 10 && i < 17) continue; // Puzzle gap
       if (bufData[i] === bufStorage[i]) continue;
 
       bufData[i] |= bufStorage[i];
@@ -512,14 +565,30 @@ export class BkOnline implements IPlugin {
       needUpdate = true;
     }
 
-    // Post Puzzle
-    for (i = 18; i < count; i++) {
-      if (bufData[i] === bufStorage[i]) continue;
-
-      bufData[i] |= bufStorage[i];
-      this.core.save.game_flags.set(i, bufData[i]);
+    // RBB water level
+    val = bufStorage[4] & 0x0000003f;
+    if ((bufData[4] & 0x0000003f) !== val) {
+      bufData[4] |= val;
+      this.core.save.game_flags.set(4, bufData[4]);
       needUpdate = true;
     }
+
+    // Puzzle gap start
+    val = bufStorage[11] & 0x0000001f;
+    if ((bufData[11] & 0x0000001f) !== val) {
+      bufData[11] |= val;
+      this.core.save.game_flags.set(11, bufData[11]);
+      needUpdate = true;
+    }
+
+    // Puzzle gap end
+    val = bufStorage[16] & 0x000000fc;
+    if ((bufData[16] & 0x000000fc) !== val) {
+      bufData[16] |= val;
+      this.core.save.game_flags.set(16, bufData[16]);
+      needUpdate = true;
+    }
+
     if (needUpdate) {
       this.cDB.game_flags = bufData;
       pData = new Net.SyncBuffered('SyncGameFlags', bufData, false);
@@ -900,21 +969,26 @@ export class BkOnline implements IPlugin {
 
     // Handle Scene Notes
     {
-      // Object Count
-      count = this.cDB.level_data[level].onotes;
-      
-      // Voxel Count
-      Object.keys(this.cDB.level_data[level].scene).forEach((key: string) => {
-        count += this.cDB.level_data[level].scene[key].notes.length;
-      });
+      // Totals override!
+      if (this.cDB.note_totals[level] === 0x64) {
+        this.core.runtime.current_level.notes = 0x64;
+      } else {
+        // Object Count
+        count = this.cDB.level_data[level].onotes;
+        
+        // Voxel Count
+        Object.keys(this.cDB.level_data[level].scene).forEach((key: string) => {
+          count += this.cDB.level_data[level].scene[key].notes.length;
+        });
 
-      // Detect Changes
-      if (this.core.runtime.current_level.notes !== count) {
-        this.needDeleteVoxels = true;
+        // Detect Changes
+        if (this.core.runtime.current_level.notes !== count) {
+          this.needDeleteVoxels = true;
+        }
+
+        // Correct Total
+        this.core.runtime.current_level.notes = count;
       }
-
-      // Correct Total
-      this.core.runtime.current_level.notes = count;
     }
   }
 
@@ -938,6 +1012,7 @@ export class BkOnline implements IPlugin {
     let id: number;
     let i: number;
     let val: number;
+    let bit: number;
 
     // Get into first actor
     ptr += 0x08;
@@ -950,14 +1025,18 @@ export class BkOnline implements IPlugin {
       switch (id) {
         case API.ActorType.EMPTY_HONEYCOMB_PIECE:
           id = this.ModLoader.emulator.rdramRead32(ptr + 0x7c);
-          val = this.cDB.honeycomb_flags[Math.floor(id / 8)];
-          if ((val & (1 << (id % 8))) !== 0) this.delete_actor(ptr);
+          val = Math.floor(id / 8);
+          bit = id % 8;
+          if (bit === 0) val -= 1;
+          val = this.cDB.honeycomb_flags[val];
+          if ((val & (1 << (bit))) !== 0)
+            this.delete_actor(ptr);
           break;
 
         case API.ActorType.JIGGY:
           id = this.ModLoader.emulator.rdramRead32(ptr + 0x80);
           val = Math.floor(id / 8);
-          let bit = id % 8;
+          bit = id % 8;
           if (bit === 0) val -= 1;
           val = this.cDB.jiggy_flags[val];
           if ((val & (1 << (bit))) !== 0)
@@ -966,8 +1045,12 @@ export class BkOnline implements IPlugin {
 
         case API.ActorType.MUMBO_TOKEN:
           id = this.ModLoader.emulator.rdramRead32(ptr + 0x7c);
-          val = this.cDB.mumbo_token_flags[Math.floor(id / 8)];
-          if ((val & (1 << (id % 8))) !== 0) this.delete_actor(ptr);
+          val = Math.floor(id / 8);
+          bit = id % 8;
+          if (bit === 0) val -= 1;
+          val = this.cDB.mumbo_token_flags[val];
+          if ((val & (1 << (bit))) !== 0)
+            this.delete_actor(ptr);
           break;
 
         // Jinjos (By Color)
@@ -1027,14 +1110,19 @@ export class BkOnline implements IPlugin {
 
     switch (this.ModLoader.emulator.rdramRead16(ptr)) {      
       case 0x1640: // Notes
-        name += this.ModLoader.emulator.rdramRead16(ptr + 0x04) +
-                this.ModLoader.emulator.rdramRead16(ptr + 0x06) +
-                this.ModLoader.emulator.rdramRead16(ptr + 0x08);
-        // We have this item, despawn it
-        if (this.cDB.level_data[level].scene[scene].notes.includes(name)) {
+        // Total overrides
+        if (this.cDB.note_totals[level] === 0x64) {
           this.mod_voxel(ptr, false);
-        } else { // We don't have this, make it visible again!
-          this.mod_voxel(ptr, true);
+        } else {
+          name += this.ModLoader.emulator.rdramRead16(ptr + 0x04) +
+                  this.ModLoader.emulator.rdramRead16(ptr + 0x06) +
+                  this.ModLoader.emulator.rdramRead16(ptr + 0x08);
+          // We have this item, despawn it
+          if (this.cDB.level_data[level].scene[scene].notes.includes(name)) {
+            this.mod_voxel(ptr, false);
+          } else { // We don't have this, make it visible again!
+            this.mod_voxel(ptr, true);
+          }
         }
         break;      
     }
@@ -1127,7 +1215,9 @@ export class BkOnline implements IPlugin {
     let bufData: Buffer;
     
     // Activate Gruntilda Lair Menu Option
-    this.ModLoader.emulator.rdramWrite8(this.beta_menu_addr, 0);
+    if (this.curLevel !== API.LevelType.GRUNTILDAS_LAIR &&
+        this.curLevel !== API.LevelType.SPIRAL_MOUNTAIN
+    ) this.ModLoader.emulator.rdramWrite8(this.beta_menu_addr, 1);
 
     // General Setup/Handlers
     this.handle_scene_change(scene);
@@ -1158,8 +1248,7 @@ export class BkOnline implements IPlugin {
 
   @EventHandler(EventsClient.ON_INJECT_FINISHED)
   onClient_InjectFinished(evt: any) {
-    // Temporary (Until final release)
-    this.core.runtime.goto_scene(0x91, 0x00);
+    if (!this.isRelease) this.core.runtime.goto_scene(0x91, 0x00);
   }
 
   @EventHandler(EventsServer.ON_LOBBY_CREATE)
@@ -1482,51 +1571,48 @@ export class BkOnline implements IPlugin {
     map.jinjos |= packet.value;
 
     // Check Jinjo Count
-    if (!storage.level_data[level].jinjo_finished) {
-      if (storage.level_data[level].jinjos === 0x001f) {
-        storage.level_data[level].jinjo_finished = true;
+    if (storage.level_data[level].jinjos === 0x1f) {
+      // Set level specific jiggy flag
+      let offset = 0;
 
-        // Set level specific jiggy flag
-        let offset = 0;
-        switch (packet.level) {
-          case API.LevelType.MUMBOS_MOUNTAIN:
-            offset = 0x01;
-            break;
-          case API.LevelType.TREASURE_TROVE_COVE:
-            offset = 0x0b;
-            break;
-          case API.LevelType.CLANKERS_CAVERN:
-            offset = 0x15;
-            break;
-          case API.LevelType.BUBBLE_GLOOP_SWAMP:
-            offset = 0x1f;
-            break;
-          case API.LevelType.FREEZEEZY_PEAK:
-            offset = 0x29;
-            break;
-          case API.LevelType.GOBEYS_VALEY:
-            offset = 0x3d;
-            break;
-          case API.LevelType.CLICK_CLOCK_WOODS:
-            offset = 0x47;
-            break;
-          case API.LevelType.RUSTY_BUCKET_BAY:
-            offset = 0x51;
-            break;
-          case API.LevelType.MAD_MONSTER_MANSION:
-            offset = 0x5b;
-            break;
-        }
-
-        storage.jiggy_flags[Math.floor(offset / 8)] |= 1 << (offset % 8);
-        let pData = new Net.SyncBuffered(
-          'SyncJiggyFlags',
-          storage.jiggy_flags,
-          true
-        );
-        pData.lobby = packet.lobby; // temporary
-        this.ModLoader.serverSide.sendPacket(pData);
+      switch (packet.level) {
+        case API.LevelType.MUMBOS_MOUNTAIN:
+          offset = 0x01;
+          break;
+        case API.LevelType.TREASURE_TROVE_COVE:
+          offset = 0x0b;
+          break;
+        case API.LevelType.CLANKERS_CAVERN:
+          offset = 0x15;
+          break;
+        case API.LevelType.BUBBLE_GLOOP_SWAMP:
+          offset = 0x1f;
+          break;
+        case API.LevelType.FREEZEEZY_PEAK:
+          offset = 0x29;
+          break;
+        case API.LevelType.GOBEYS_VALEY:
+          offset = 0x3d;
+          break;
+        case API.LevelType.CLICK_CLOCK_WOODS:
+          offset = 0x47;
+          break;
+        case API.LevelType.RUSTY_BUCKET_BAY:
+          offset = 0x51;
+          break;
+        case API.LevelType.MAD_MONSTER_MANSION:
+          offset = 0x5b;
+          break;
       }
+
+      storage.jiggy_flags[Math.floor(offset / 8)] |= 1 << (offset % 8);
+      let pData = new Net.SyncBuffered(
+        'SyncJiggyFlags',
+        storage.jiggy_flags,
+        true
+      );
+      pData.lobby = packet.lobby; // temporary
+      this.ModLoader.serverSide.sendPacket(pData);
     }
 
     let pData = new Net.SyncLevelNumbered(

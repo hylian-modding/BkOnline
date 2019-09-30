@@ -23,7 +23,6 @@ export class LevelData {
   scene: any = {};
   onotes: number = 0;
   jinjos: number = 0;
-  jinjo_finished: boolean = false;
 
   // Level Specific
   orange: number = 0;
