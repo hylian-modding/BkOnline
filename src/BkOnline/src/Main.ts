@@ -869,6 +869,10 @@ export class BkOnline implements IPlugin {
     this.ModLoader.clientSide.sendPacket(pData);
   }
 
+  handle_items() {
+
+  }
+
   handle_collision(scene: API.SceneType) {
     // Initializers
     let pData: Net.SyncLevelNumbered;
@@ -1180,7 +1184,7 @@ export class BkOnline implements IPlugin {
   }
 
   init(): void {
-    global.ModLoader['BK:puppet_address'] = 0x400100;
+    global.ModLoader['BK:puppet_address'] = 0x401000;
     this.actor_arr_addr = global.ModLoader[API.AddressType.RT_ACTOR_ARRAY_PTR];
     this.beta_menu_addr = global.ModLoader[API.AddressType.BETA_MENU];
     this.collision_addr = global.ModLoader[API.AddressType.RT_COLLISION_PTR];
@@ -1234,6 +1238,7 @@ export class BkOnline implements IPlugin {
     this.handle_moves();
     this.handle_events_level();
     this.handle_events_scene();
+    this.handle_items();
 
     // Order-Specific Handlers
     this.handle_collision(scene);
