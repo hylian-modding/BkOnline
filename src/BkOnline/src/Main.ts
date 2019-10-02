@@ -589,6 +589,7 @@ export class BkOnline implements IPlugin {
       needUpdate = true;
     }
 
+    // Send Changes to Server
     if (needUpdate) {
       this.cDB.game_flags = bufData;
       pData = new Net.SyncBuffered('SyncGameFlags', bufData, false);
