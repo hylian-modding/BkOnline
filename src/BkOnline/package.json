@@ -7,5 +7,5 @@
   "credits": "denoflions, MelonSpeedruns",
   "license": "GPL3",
   "core": "BanjoKazooie",
-  "updateUrl": "https://github.com/hylian-modding/BkOnline/tree/master/Package/update.json"
+  "updateUrl": "https://raw.githubusercontent.com/hylian-modding/BkOnline/master/Package/update.json"
 }
