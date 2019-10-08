@@ -789,6 +789,8 @@ export class BkOnline implements IPlugin {
 
     // Dont update while these cutscenes are active!
     if (
+      (evt & (1 << API.EventLevelBMP.CUTSCENE_TTC_OPENING)) ||
+      (evt & (1 << API.EventLevelBMP.CUTSCENE_BGS_OPENING)) ||
       (evt & (1 << API.EventLevelBMP.CUTSCENE_RBB_ENGINE_ROOM_RIGHT)) ||
       (evt & (1 << API.EventLevelBMP.CUTSCENE_RBB_ENGINE_ROOM_RIGHT)) ||
       (evt & (1 << API.EventLevelBMP.CUTSCENE_TTC_SANDCASTLE_WATER_LOWERED)) ||
