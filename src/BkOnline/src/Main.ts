@@ -29,8 +29,6 @@ export class BkOnline implements IPlugin {
   @InjectCore() core!: API.IBKCore;
 
   // Storage Variables
-  @LobbyVariable('BkOnline:storage')
-  sDB = new Net.DatabaseServer();
   cDB = new Net.DatabaseClient();
 
   // Puppet Handler
@@ -167,7 +165,7 @@ export class BkOnline implements IPlugin {
 
     // Alert scene change so puppet can despawn for other players
     if (scene === API.SceneType.UNKNOWN) {
-      this.ModLoader.clientSide.sendPacket(new Net.SyncLocation(0, 0));
+      this.ModLoader.clientSide.sendPacket(new Net.SyncLocation(this.ModLoader.clientLobby, 0, 0));
       return;
     }
     
@@ -192,7 +190,7 @@ export class BkOnline implements IPlugin {
     this.check_db_instance(this.cDB, level, scene);  
         
     // Alert scene change!
-    this.ModLoader.clientSide.sendPacket(new Net.SyncLocation(level, scene));
+    this.ModLoader.clientSide.sendPacket(new Net.SyncLocation(this.ModLoader.clientLobby, level, scene));
     this.ModLoader.logger.info('[Tick] Moved to scene[' + API.SceneType[scene] + '].');
 
     // Remove completed jinjos from previous session!
@@ -496,7 +494,7 @@ export class BkOnline implements IPlugin {
       }
 
       this.cDB.jigsaws_completed = bufStorage;
-      pData = new Net.SyncBuffered('SyncJigsaws', bufStorage, false);
+      pData = new Net.SyncBuffered(this.ModLoader.clientLobby, 'SyncJigsaws', bufStorage, false);
       this.ModLoader.clientSide.sendPacket(pData);
     }
 
@@ -592,7 +590,7 @@ export class BkOnline implements IPlugin {
     // Send Changes to Server
     if (needUpdate) {
       this.cDB.game_flags = bufData;
-      pData = new Net.SyncBuffered('SyncGameFlags', bufData, false);
+      pData = new Net.SyncBuffered(this.ModLoader.clientLobby, 'SyncGameFlags', bufData, false);
       this.ModLoader.clientSide.sendPacket(pData);
     }
 
@@ -632,7 +630,7 @@ export class BkOnline implements IPlugin {
     this.core.save.inventory.health_upgrades = count / 6;
     this.core.runtime.current_health = count / 6 + 5;
 
-    pData = new Net.SyncBuffered('SyncHoneyCombFlags', bufData, false);
+    pData = new Net.SyncBuffered(this.ModLoader.clientLobby, 'SyncHoneyCombFlags', bufData, false);
     this.ModLoader.clientSide.sendPacket(pData);
   }
 
@@ -662,7 +660,7 @@ export class BkOnline implements IPlugin {
     if (!needUpdate) return;
     
     this.cDB.jiggy_flags = bufData;
-    pData = new Net.SyncBuffered('SyncJiggyFlags', bufData, false);
+    pData = new Net.SyncBuffered(this.ModLoader.clientLobby, 'SyncJiggyFlags', bufData, false);
     this.ModLoader.clientSide.sendPacket(pData);
   }
 
@@ -688,7 +686,7 @@ export class BkOnline implements IPlugin {
     if (!needUpdate) return;
 
     this.cDB.mumbo_token_flags = bufData;
-    pData = new Net.SyncBuffered('SyncMumboTokenFlags', bufData, false);
+    pData = new Net.SyncBuffered(this.ModLoader.clientLobby, 'SyncMumboTokenFlags', bufData, false);
     this.ModLoader.clientSide.sendPacket(pData);
 
     // Sync totals
@@ -719,7 +717,7 @@ export class BkOnline implements IPlugin {
     if (!needUpdate) return;
 
     this.cDB.note_totals = bufData;
-    pData = new Net.SyncBuffered('SyncNoteTotals', bufData, false);
+    pData = new Net.SyncBuffered(this.ModLoader.clientLobby, 'SyncNoteTotals', bufData, false);
     this.ModLoader.clientSide.sendPacket(pData);
   }
 
@@ -763,7 +761,7 @@ export class BkOnline implements IPlugin {
 
     // Send Changes to Server
     this.cDB.moves = val;
-    pData = new Net.SyncNumbered('SyncMoves', val, false);
+    pData = new Net.SyncNumbered(this.ModLoader.clientLobby, 'SyncMoves', val, false);
     this.ModLoader.clientSide.sendPacket(pData);
 
     // Perform heal
@@ -812,7 +810,7 @@ export class BkOnline implements IPlugin {
     this.ModLoader.emulator.rdramWrite32(0x80383320, crc1);
     this.ModLoader.emulator.rdramWrite32(0x80383324, crc2);
 
-    pData = new Net.SyncNumbered('SyncLevelEvents', evt, false);
+    pData = new Net.SyncNumbered(this.ModLoader.clientLobby, 'SyncLevelEvents', evt, false);
     this.ModLoader.clientSide.sendPacket(pData);
   }
 
@@ -863,6 +861,7 @@ export class BkOnline implements IPlugin {
 
     // Send changes to network
     let pData = new Net.SyncSceneNumbered(
+      this.ModLoader.clientLobby,
       'SyncSceneEvents',
       level,
       scene, 
@@ -889,6 +888,7 @@ export class BkOnline implements IPlugin {
         if (this.cDB.level_data[level].onotes < this.oNoteCount) {
           this.cDB.level_data[level].onotes = this.oNoteCount;
           pData = new Net.SyncLevelNumbered(
+            this.ModLoader.clientLobby,
             'SyncObjectNotes',
             level,
             this.cDB.level_data[level].onotes,
@@ -937,6 +937,7 @@ export class BkOnline implements IPlugin {
           if (!this.cDB.level_data[level].scene[scene].notes.includes(name)) {
             this.cDB.level_data[level].scene[scene].notes.push(name);
             let pData = new Net.SyncVoxelNotes(
+              this.ModLoader.clientLobby,
               level,
               scene,
               this.cDB.level_data[level].scene[scene].notes,
@@ -951,6 +952,7 @@ export class BkOnline implements IPlugin {
     // Handle jinjo from voxel OR model.
     if (foundJinjo) {
       pData = new Net.SyncLevelNumbered(
+        this.ModLoader.clientLobby,
         'SyncJinjos', 
         level, 
         this.cDB.level_data[level].jinjos, 
@@ -1260,31 +1262,31 @@ export class BkOnline implements IPlugin {
   }
 
   @EventHandler(EventsServer.ON_LOBBY_CREATE)
-  onServer_LobbyCreate(storage: ILobbyStorage) {
-    this.sDB = new Net.DatabaseServer();
+  onServer_LobbyCreate(lobby: string) {    
+    this.ModLoader.lobbyManager.createLobbyStorage(
+      lobby, 
+      this, 
+      new Net.DatabaseServer()
+    );
   }
 
   @EventHandler(EventsClient.ON_LOBBY_JOIN)
   onClient_LobbyJoin(lobby: LobbyData): void {
     this.cDB = new Net.DatabaseClient();
-    let pData = new Packet('Request_Storage', 'BkOnline', false);
+    let pData = new Packet('Request_Storage', 'BkOnline', this.ModLoader.clientLobby, false);
     this.ModLoader.clientSide.sendPacket(pData);
   }
 
   @EventHandler(EventsServer.ON_LOBBY_JOIN)
   onServer_LobbyJoin(evt: EventServerJoined) {
-    let storage: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(
-      evt.lobby
-    ).data['BkOnline:storage'].sDB as Net.DatabaseServer;
+    let storage: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(evt.lobby, this) as Net.DatabaseServer;
     storage.players[evt.player.uuid] = -1;
     storage.playerInstances[evt.player.uuid] = evt.player;
   }
 
   @EventHandler(EventsServer.ON_LOBBY_LEAVE)
   onServer_LobbyLeave(evt: EventServerLeft) {
-    let lobbyStorage = this.ModLoader.lobbyManager.getLobbyStorage(evt.lobby);
-    if (lobbyStorage === null) return;
-    let storage = lobbyStorage.data['BkOnline:storage'].sDB as Net.DatabaseServer;
+    let storage: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(evt.lobby, this) as Net.DatabaseServer;
     delete storage.players[evt.player.uuid];
     delete storage.playerInstances[evt.player.uuid];
   }
@@ -1293,7 +1295,7 @@ export class BkOnline implements IPlugin {
   onClient_ServerConnection(evt: any) {
     this.pMgr.reset();
     if (this.core.runtime === undefined || !this.core.isPlaying) return;
-    let pData = new Net.SyncLocation(this.curLevel, this.curScene)
+    let pData = new Net.SyncLocation(this.ModLoader.clientLobby, this.curLevel, this.curScene)
     this.ModLoader.clientSide.sendPacket(pData);
   }
 
@@ -1314,16 +1316,18 @@ export class BkOnline implements IPlugin {
   @ServerNetworkHandler('Request_Storage')
   onServer_RequestStorage(packet: Packet): void {
     this.ModLoader.logger.info('[Server] Sending: {Lobby Storage}');
+    let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
     let pData = new Net.SyncStorage(
-      this.sDB.game_flags,
-      this.sDB.honeycomb_flags,
-      this.sDB.jiggy_flags,
-      this.sDB.mumbo_token_flags,
-      this.sDB.note_totals,
-      this.sDB.jigsaws_completed,
-      this.sDB.level_data,
-      this.sDB.level_events,
-      this.sDB.moves
+      packet.lobby,
+      sDB.game_flags,
+      sDB.honeycomb_flags,
+      sDB.jiggy_flags,
+      sDB.mumbo_token_flags,
+      sDB.note_totals,
+      sDB.jigsaws_completed,
+      sDB.level_data,
+      sDB.level_events,
+      sDB.moves
     );
     this.ModLoader.serverSide.sendPacketToSpecificPlayer(pData, packet.player);
   }
@@ -1332,7 +1336,8 @@ export class BkOnline implements IPlugin {
   onServer_SyncGameFlags(packet: Net.SyncBuffered) {
     this.ModLoader.logger.info('[Server] Received: {Game Flags}');
 
-    let data: Buffer = this.sDB.game_flags;
+    let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+    let data: Buffer = sDB.game_flags;
     let count: number = data.byteLength;
     let i = 0;
     let needUpdate = false;
@@ -1345,9 +1350,9 @@ export class BkOnline implements IPlugin {
 
     if (!needUpdate) return;
 
-    this.sDB.game_flags = data;
+    sDB.game_flags = data;
 
-    let pData = new Net.SyncBuffered('SyncGameFlags', data, true);
+    let pData = new Net.SyncBuffered(packet.lobby, 'SyncGameFlags', data, true);
     pData.lobby = packet.lobby; // temporary
     this.ModLoader.serverSide.sendPacket(pData);
 
@@ -1358,7 +1363,8 @@ export class BkOnline implements IPlugin {
   onServer_SyncHoneyCombFlags(packet: Net.SyncBuffered) {
     this.ModLoader.logger.info('[Server] Received: {HoneyComb Flags}');
 
-    let data: Buffer = this.sDB.honeycomb_flags;
+    let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+    let data: Buffer = sDB.honeycomb_flags;
     let count: number = data.byteLength;
     let i = 0;
     let needUpdate = false;
@@ -1371,9 +1377,9 @@ export class BkOnline implements IPlugin {
 
     if (!needUpdate) return;
       
-    this.sDB.honeycomb_flags = data;
+    sDB.honeycomb_flags = data;
       
-    let pData = new Net.SyncBuffered('SyncHoneyCombFlags', data, true);
+    let pData = new Net.SyncBuffered(packet.lobby, 'SyncHoneyCombFlags', data, true);
     pData.lobby = packet.lobby; // temporary
     this.ModLoader.serverSide.sendPacket(pData);
 
@@ -1384,7 +1390,8 @@ export class BkOnline implements IPlugin {
   onServer_SyncJiggyFlags(packet: Net.SyncBuffered) {
     this.ModLoader.logger.info('[Server] Received: {Jiggy Flags}');
 
-    let data: Buffer = this.sDB.jiggy_flags;
+    let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+    let data: Buffer = sDB.jiggy_flags;
     let count: number = data.byteLength;
     let i = 0;
     let needUpdate = false;
@@ -1397,9 +1404,9 @@ export class BkOnline implements IPlugin {
 
     if (!needUpdate) return;
       
-    this.sDB.jiggy_flags = data;
+    sDB.jiggy_flags = data;
       
-    let pData = new Net.SyncBuffered('SyncJiggyFlags', data, true);
+    let pData = new Net.SyncBuffered(packet.lobby, 'SyncJiggyFlags', data, true);
     pData.lobby = packet.lobby; // temporary
     this.ModLoader.serverSide.sendPacket(pData);
 
@@ -1410,10 +1417,11 @@ export class BkOnline implements IPlugin {
   onServer_SyncMoves(packet: Net.SyncNumbered) {
     this.ModLoader.logger.info('[Server] Received: {Move Flags}');
 
-    if (this.sDB.moves === packet.value) return;    
-    this.sDB.moves |= packet.value;
+    let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+    if (sDB.moves === packet.value) return;    
+    sDB.moves |= packet.value;
 
-    let pData = new Net.SyncNumbered('SyncMoves', this.sDB.moves, true);
+    let pData = new Net.SyncNumbered(packet.lobby, 'SyncMoves', sDB.moves, true);
     pData.lobby = packet.lobby; // temporary
     this.ModLoader.serverSide.sendPacket(pData);
 
@@ -1424,7 +1432,8 @@ export class BkOnline implements IPlugin {
   onServer_SyncMumboTokenFlags(packet: Net.SyncBuffered) {
     this.ModLoader.logger.info('[Server] Received: {Mumbo Token Flags}');
 
-    let data: Buffer = this.sDB.mumbo_token_flags;
+    let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+    let data: Buffer = sDB.mumbo_token_flags;
     let count: number = data.byteLength;
     let i = 0;
     let needUpdate = false;
@@ -1437,9 +1446,9 @@ export class BkOnline implements IPlugin {
 
     if (!needUpdate) return;
       
-    this.sDB.mumbo_token_flags = data;
+    sDB.mumbo_token_flags = data;
 
-    let pData = new Net.SyncBuffered('SyncMumboTokenFlags', data, true);
+    let pData = new Net.SyncBuffered(packet.lobby, 'SyncMumboTokenFlags', data, true);
     pData.lobby = packet.lobby; // temporary
     this.ModLoader.serverSide.sendPacket(pData);
 
@@ -1450,7 +1459,8 @@ export class BkOnline implements IPlugin {
   onServer_SyncSyncNoteTotals(packet: Net.SyncBuffered) {
     this.ModLoader.logger.info('[Server] Received: {Note Totals}');
 
-    let data: Buffer = this.sDB.note_totals;
+    let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+    let data: Buffer = sDB.note_totals;
     let count: number = data.byteLength;
     let i = 0;
     let needUpdate = false;
@@ -1464,9 +1474,9 @@ export class BkOnline implements IPlugin {
 
     if (!needUpdate) return;
     
-    this.sDB.note_totals = data;
+    sDB.note_totals = data;
 
-    let pData = new Net.SyncBuffered('SyncNoteTotals', data, true);
+    let pData = new Net.SyncBuffered(packet.lobby, 'SyncNoteTotals', data, true);
     pData.lobby = packet.lobby; // temporary
     this.ModLoader.serverSide.sendPacket(pData);
 
@@ -1477,7 +1487,8 @@ export class BkOnline implements IPlugin {
   onServer_SyncJigsaws(packet: Net.SyncBuffered) {
     this.ModLoader.logger.info('[Server] Received: {Jigsaws Completion}');
 
-    let data: Buffer = this.sDB.jigsaws_completed;
+    let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+    let data: Buffer = sDB.jigsaws_completed;
     let count: number = data.byteLength;
     let i = 0;
     let needUpdate = false;
@@ -1490,9 +1501,9 @@ export class BkOnline implements IPlugin {
 
     if (!needUpdate) return;
     
-    this.sDB.jigsaws_completed = data;
+    sDB.jigsaws_completed = data;
 
-    let pData = new Net.SyncBuffered('SyncJigsaws', data, true);
+    let pData = new Net.SyncBuffered(packet.lobby, 'SyncJigsaws', data, true);
     pData.lobby = packet.lobby; // temporary
     this.ModLoader.serverSide.sendPacket(pData);
 
@@ -1503,12 +1514,14 @@ export class BkOnline implements IPlugin {
   onServer_SyncLevelEvents(packet: Net.SyncNumbered) {
     this.ModLoader.logger.info('[Server] Received: {Level Events}');
 
-    if (this.sDB.level_events === packet.value) return;    
-    this.sDB.level_events |= packet.value;
+    let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+    if (sDB.level_events === packet.value) return;    
+    sDB.level_events |= packet.value;
 
     let pData = new Net.SyncNumbered(
+      packet.lobby,
       'SyncLevelEvents',
-      this.sDB.level_events,
+      sDB.level_events,
       true
     );
     pData.lobby = packet.lobby; // temporary
@@ -1522,39 +1535,36 @@ export class BkOnline implements IPlugin {
   @ServerNetworkHandler('SyncLocation')
   onServer_SyncLocation(packet: Net.SyncLocation) {
     
+    let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
     let pMsg = 'Player[' + packet.player.nickname + ']';
     let lMsg = 'Level[' + API.LevelType[packet.level] + ']';
     let sMsg = 'Scene[' + API.SceneType[packet.scene] + ']';
-    this.sDB.players[packet.player.uuid] = packet.scene;
+    sDB.players[packet.player.uuid] = packet.scene;
     this.ModLoader.logger.info('[Server] Received: {Player Scene}');
     this.ModLoader.logger.info('[Server] Updated: ' + pMsg + ' to ' + sMsg + ' of ' + lMsg);
 
     if (packet.level === API.LevelType.UNKNOWN ||
         packet.scene === API.SceneType.UNKNOWN) return;
-      
     
-    let storage: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(
-      packet.lobby
-    ).data['BkOnline:storage'].sDB as Net.DatabaseServer;
-    
-    this.check_db_instance(storage, packet.level, packet.scene);
+    this.check_db_instance(sDB, packet.level, packet.scene);
   }
 
   @ServerNetworkHandler('SyncPuppet')
   onServer_SyncPuppet(packet: Net.SyncPuppet) {
-    Object.keys(this.sDB.players).forEach((key: string) => {
-      if (this.sDB.players[key] !== this.sDB.players[packet.player.uuid]) {
+    let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+    Object.keys(sDB.players).forEach((key: string) => {
+      if (sDB.players[key] !== sDB.players[packet.player.uuid]) {
         return;
       }
 
-      if (!this.sDB.playerInstances.hasOwnProperty(key)) return;
-      if (this.sDB.playerInstances[key].uuid === packet.player.uuid) {
+      if (!sDB.playerInstances.hasOwnProperty(key)) return;
+      if (sDB.playerInstances[key].uuid === packet.player.uuid) {
         return;
       }
 
       this.ModLoader.serverSide.sendPacketToSpecificPlayer(
         packet,
-        this.sDB.playerInstances[key]
+        sDB.playerInstances[key]
       );
     });
   }
@@ -1565,21 +1575,18 @@ export class BkOnline implements IPlugin {
   onServer_SyncJinjos(packet: Net.SyncLevelNumbered) {
     this.ModLoader.logger.info('[Server] Received: {Jinjo}');
 
-    let storage: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(
-      packet.lobby
-    ).data['BkOnline:storage'].sDB as Net.DatabaseServer;
-
+    let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
     let level = packet.level;
     
     // Ensure we have this level/scene data!
-    this.check_db_instance(storage, level, 0);    
+    this.check_db_instance(sDB, level, 0);    
 
-    let map = storage.level_data[level];
+    let map = sDB.level_data[level];
     if (map.jinjos === packet.value) return;
     map.jinjos |= packet.value;
 
     // Check Jinjo Count
-    if (storage.level_data[level].jinjos === 0x1f) {
+    if (sDB.level_data[level].jinjos === 0x1f) {
       // Set level specific jiggy flag
       let offset = 0;
 
@@ -1613,10 +1620,11 @@ export class BkOnline implements IPlugin {
           break;
       }
 
-      storage.jiggy_flags[Math.floor(offset / 8)] |= 1 << (offset % 8);
+      sDB.jiggy_flags[Math.floor(offset / 8)] |= 1 << (offset % 8);
       let pData = new Net.SyncBuffered(
+        packet.lobby,
         'SyncJiggyFlags',
-        storage.jiggy_flags,
+        sDB.jiggy_flags,
         true
       );
       pData.lobby = packet.lobby; // temporary
@@ -1624,6 +1632,7 @@ export class BkOnline implements IPlugin {
     }
 
     let pData = new Net.SyncLevelNumbered(
+      packet.lobby,
       'SyncJinjos',
       level,
       map.jinjos,
@@ -1638,20 +1647,18 @@ export class BkOnline implements IPlugin {
   onServer_SyncObjectNotes(packet: Net.SyncLevelNumbered) {
     this.ModLoader.logger.info('[Server] Received: {Level Note Count}');
 
-    let storage: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(
-      packet.lobby
-    ).data['BkOnline:storage'].sDB as Net.DatabaseServer;
-
+    let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
     let level = packet.level;
     
     // Ensure we have this level/scene data!
-    this.check_db_instance(storage, level, 0);    
+    this.check_db_instance(sDB, level, 0);    
 
-    let map = storage.level_data[level];
+    let map = sDB.level_data[level];
     if (map.onotes >= packet.value) return;
     map.onotes = packet.value;
 
     let pData = new Net.SyncLevelNumbered(
+      packet.lobby,
       'SyncObjectNotes',
       level,
       map.onotes,
@@ -1666,17 +1673,14 @@ export class BkOnline implements IPlugin {
   onServer_SyncVoxelNotes(packet: Net.SyncVoxelNotes) {
     this.ModLoader.logger.info('[Server] Received: {Level Note Count}');
 
-    let storage: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(
-      packet.lobby
-    ).data['BkOnline:storage'].sDB as Net.DatabaseServer;
-
+    let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
     let level = packet.level;
     let scene = packet.scene;
     
     // Ensure we have this level/scene data!
-    this.check_db_instance(storage, level, scene);    
+    this.check_db_instance(sDB, level, scene);    
 
-    let map = storage.level_data[level].scene[scene];
+    let map = sDB.level_data[level].scene[scene];
     let i = 0;
     let needsUpdate = false;
 
@@ -1689,7 +1693,7 @@ export class BkOnline implements IPlugin {
 
     if (!needsUpdate) return;
 
-    let pData = new SyncVoxelNotes(level, scene, map.notes, true);
+    let pData = new SyncVoxelNotes(packet.lobby, level, scene, map.notes, true);
     this.ModLoader.serverSide.sendPacket(pData);
 
     this.ModLoader.logger.info('[Server] Updated: {Level Note Count}');
@@ -1871,7 +1875,7 @@ export class BkOnline implements IPlugin {
   @NetworkHandler('Request_Scene')
   onClient_RequestScene(packet: Packet) {
     if (this.core.runtime === undefined || !this.core.isPlaying) return;
-    let pData = new Net.SyncLocation(this.curLevel, this.curScene);
+    let pData = new Net.SyncLocation(packet.lobby, this.curLevel, this.curScene);
     this.ModLoader.clientSide.sendPacketToSpecificPlayer(pData, packet.player);
   }
 

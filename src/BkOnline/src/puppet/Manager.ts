@@ -118,7 +118,7 @@ export class PuppetManager {
     this.puppetArray[index].nplayer = nplayer;
     this.playerToPuppetMap.set(nplayer.uuid, index);
     this.log('Assigned puppet to nplayer ' + nplayer.nickname + '.');
-    this.mapi.clientSide.sendPacket(new Packet('Request_Scene', 'BkOnline', true));
+    this.mapi.clientSide.sendPacket(new Packet('Request_Scene', 'BkOnline', this.mapi.clientLobby, true));
   }
 
   handleAwaitingSpawns() {
@@ -177,7 +177,7 @@ export class PuppetManager {
   }
 
   sendPuppet() {
-    let pData = new Net.SyncPuppet(this.dummy.data);
+    let pData = new Net.SyncPuppet(this.mapi.clientLobby, this.dummy.data);
     this.mapi.clientSide.sendPacket(pData);
   }
 

@@ -13,6 +13,7 @@ export class SyncStorage extends Packet {
   level_events: number;
   moves: number;
   constructor(
+    lobby: string,
     game_flags: Buffer,
     honeycomb_flags: Buffer,
     jiggy_flags: Buffer,
@@ -23,7 +24,7 @@ export class SyncStorage extends Packet {
     level_events: number,
     moves: number
   ) {
-    super('SyncStorage', 'BkOnline', false);
+    super('SyncStorage', 'BkOnline', lobby, false);
     this.game_flags = game_flags;
     this.honeycomb_flags = honeycomb_flags;
     this.jiggy_flags = jiggy_flags;
@@ -38,16 +39,16 @@ export class SyncStorage extends Packet {
 
 export class SyncBuffered extends Packet {
   value: Buffer;
-  constructor(header: string, value: Buffer, persist: boolean) {
-    super(header, 'BkOnline', persist);
+  constructor(lobby: string, header: string, value: Buffer, persist: boolean) {
+    super(header, 'BkOnline', lobby, persist);
     this.value = value;
   }
 }
 
 export class SyncNumbered extends Packet {
   value: number;
-  constructor(header: string, value: number, persist: boolean) {
-    super(header, 'BkOnline', persist);
+  constructor(lobby: string, header: string, value: number, persist: boolean) {
+    super(header, 'BkOnline', lobby, persist);
     this.value = value;
   }
 }
@@ -58,8 +59,8 @@ export class SyncNumbered extends Packet {
 
 export class SyncPuppet extends UDPPacket {
   puppet: PData.IData;
-  constructor(value: PData.Data) {
-    super('SyncPuppet', 'BkOnline', false);
+  constructor(lobby: string, value: PData.Data) {
+    super('SyncPuppet', 'BkOnline', lobby, false);
     this.puppet = value;
   }
 }
@@ -67,8 +68,8 @@ export class SyncPuppet extends UDPPacket {
 export class SyncLocation extends Packet {
   level: number;
   scene: number;
-  constructor(level: number, scene: number) {
-    super('SyncLocation', 'BkOnline', true);
+  constructor(lobby: string, level: number, scene: number) {
+    super('SyncLocation', 'BkOnline', lobby, true);
     this.level = level;
     this.scene = scene;
   }
@@ -82,12 +83,13 @@ export class SyncLevelNumbered extends Packet {
   level: number;
   value: number;
   constructor(
+    lobby: string,
     header: string,
     level: number,
     value: number,
     persist: boolean
   ) {
-    super(header, 'BkOnline', persist);
+    super(header, 'BkOnline', lobby, persist);
     this.level = level;
     this.value = value;
   }
@@ -102,13 +104,14 @@ export class SyncSceneNumbered extends Packet {
   scene: number;
   value: number;
   constructor(
+    lobby: string,
     header: string,
     level: number,
     scene: number,
     value: number,
     persist: boolean
   ) {
-    super(header, 'BkOnline', persist);
+    super(header, 'BkOnline', lobby, persist);
     this.level = level;
     this.scene = scene;
     this.value = value;
@@ -120,12 +123,13 @@ export class SyncVoxelNotes extends Packet {
   scene: number;
   notes: number[];
   constructor(
+    lobby: string,
     level: number,
     scene: number,
     notes: number[],
     persist: boolean
   ) {
-    super('SyncVoxelNotes', 'BkOnline', persist);
+    super('SyncVoxelNotes', 'BkOnline', lobby, persist);
     this.level = level;
     this.scene = scene;
     this.notes = notes;
