@@ -84,12 +84,12 @@ export class Data extends API.BaseObj implements IData {
     let ptr: number = this.safetyCheck();
     if (ptr === 0x000000) return;
 
-    let x: number = val.readUInt32BE(0x0);
-    let y: number = val.readUInt32BE(0x4);
-    let z: number = val.readUInt32BE(0x8);
-    this.emulator.rdramWritePtr32(this.pointer, 0x68, x);
-    this.emulator.rdramWritePtr32(this.pointer, 0x50, y);
-    this.emulator.rdramWritePtr32(this.pointer, 0x110, z);
+    let x: number = val.readFloatBE(0x0);
+    let y: number = val.readFloatBE(0x4);
+    let z: number = val.readFloatBE(0x8);
+    this.emulator.rdramWritePtrF32(this.pointer, 0x68, x);
+    this.emulator.rdramWritePtrF32(this.pointer, 0x50, y);
+    this.emulator.rdramWritePtrF32(this.pointer, 0x110, z);
   }
 
   get model(): number {
