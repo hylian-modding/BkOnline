@@ -14,7 +14,6 @@ import {
   ServerNetworkHandler,
 } from 'modloader64_api/NetworkHandler';
 import { InjectCore } from 'modloader64_api/CoreInjection';
-import { LobbyVariable } from 'modloader64_api/LobbyVariable';
 import { Packet } from 'modloader64_api/ModLoaderDefaultImpls';
 import * as API from 'modloader64_api/BK/Imports';
 import * as Net from './network/Imports';
@@ -1353,7 +1352,6 @@ export class BkOnline implements IPlugin {
     sDB.game_flags = data;
 
     let pData = new Net.SyncBuffered(packet.lobby, 'SyncGameFlags', data, true);
-    pData.lobby = packet.lobby; // temporary
     this.ModLoader.serverSide.sendPacket(pData);
 
     this.ModLoader.logger.info('[Server] Updated: {Game Flags}');
@@ -1380,7 +1378,6 @@ export class BkOnline implements IPlugin {
     sDB.honeycomb_flags = data;
       
     let pData = new Net.SyncBuffered(packet.lobby, 'SyncHoneyCombFlags', data, true);
-    pData.lobby = packet.lobby; // temporary
     this.ModLoader.serverSide.sendPacket(pData);
 
     this.ModLoader.logger.info('[Server] Updated: {HoneyComb Flags}');
@@ -1407,7 +1404,6 @@ export class BkOnline implements IPlugin {
     sDB.jiggy_flags = data;
       
     let pData = new Net.SyncBuffered(packet.lobby, 'SyncJiggyFlags', data, true);
-    pData.lobby = packet.lobby; // temporary
     this.ModLoader.serverSide.sendPacket(pData);
 
     this.ModLoader.logger.info('[Server] Updated: {Jiggy Flags}');
@@ -1422,7 +1418,6 @@ export class BkOnline implements IPlugin {
     sDB.moves |= packet.value;
 
     let pData = new Net.SyncNumbered(packet.lobby, 'SyncMoves', sDB.moves, true);
-    pData.lobby = packet.lobby; // temporary
     this.ModLoader.serverSide.sendPacket(pData);
 
     this.ModLoader.logger.info('[Server] Updated: {Move Flags}');    
@@ -1449,7 +1444,6 @@ export class BkOnline implements IPlugin {
     sDB.mumbo_token_flags = data;
 
     let pData = new Net.SyncBuffered(packet.lobby, 'SyncMumboTokenFlags', data, true);
-    pData.lobby = packet.lobby; // temporary
     this.ModLoader.serverSide.sendPacket(pData);
 
     this.ModLoader.logger.info('[Server] Updated: {Mumbo Token Flags}');
@@ -1477,7 +1471,6 @@ export class BkOnline implements IPlugin {
     sDB.note_totals = data;
 
     let pData = new Net.SyncBuffered(packet.lobby, 'SyncNoteTotals', data, true);
-    pData.lobby = packet.lobby; // temporary
     this.ModLoader.serverSide.sendPacket(pData);
 
     this.ModLoader.logger.info('[Server] Updated: {Note Totals}');
@@ -1504,7 +1497,6 @@ export class BkOnline implements IPlugin {
     sDB.jigsaws_completed = data;
 
     let pData = new Net.SyncBuffered(packet.lobby, 'SyncJigsaws', data, true);
-    pData.lobby = packet.lobby; // temporary
     this.ModLoader.serverSide.sendPacket(pData);
 
     this.ModLoader.logger.info('[Server] Updated: {Jigsaws Completion}');
@@ -1518,13 +1510,7 @@ export class BkOnline implements IPlugin {
     if (sDB.level_events === packet.value) return;    
     sDB.level_events |= packet.value;
 
-    let pData = new Net.SyncNumbered(
-      packet.lobby,
-      'SyncLevelEvents',
-      sDB.level_events,
-      true
-    );
-    pData.lobby = packet.lobby; // temporary
+    let pData = new Net.SyncNumbered(packet.lobby,'SyncLevelEvents', sDB.level_events, true);
     this.ModLoader.serverSide.sendPacket(pData);
 
     this.ModLoader.logger.info('[Server] Updated: {Level Events}');
@@ -1621,13 +1607,7 @@ export class BkOnline implements IPlugin {
       }
 
       sDB.jiggy_flags[Math.floor(offset / 8)] |= 1 << (offset % 8);
-      let pData = new Net.SyncBuffered(
-        packet.lobby,
-        'SyncJiggyFlags',
-        sDB.jiggy_flags,
-        true
-      );
-      pData.lobby = packet.lobby; // temporary
+      let pData = new Net.SyncBuffered(packet.lobby, 'SyncJiggyFlags', sDB.jiggy_flags, true);
       this.ModLoader.serverSide.sendPacket(pData);
     }
 
@@ -1657,13 +1637,7 @@ export class BkOnline implements IPlugin {
     if (map.onotes >= packet.value) return;
     map.onotes = packet.value;
 
-    let pData = new Net.SyncLevelNumbered(
-      packet.lobby,
-      'SyncObjectNotes',
-      level,
-      map.onotes,
-      true
-    );
+    let pData = new Net.SyncLevelNumbered(packet.lobby, 'SyncObjectNotes', level, map.onotes, true);
     this.ModLoader.serverSide.sendPacket(pData);
 
     this.ModLoader.logger.info('[Server] Updated: {Level Note Count}');
