@@ -7,7 +7,6 @@ import {
 } from 'modloader64_api/EventHandler';
 import { IModLoaderAPI, IPlugin } from 'modloader64_api/IModLoaderAPI';
 import {
-  ILobbyStorage,
   INetworkPlayer,
   LobbyData,
   NetworkHandler,
@@ -18,11 +17,9 @@ import { Packet } from 'modloader64_api/ModLoaderDefaultImpls';
 import * as API from 'modloader64_api/BK/Imports';
 import * as Net from './network/Imports';
 import * as Puppet from './puppet/Imports';
-import { SyncVoxelNotes } from './network/Imports';
 
 export class BkOnline implements IPlugin {
   ModLoader = {} as IModLoaderAPI;
-  core_dependency = 'BanjoKazooie';
   name = 'BkOnline';
 
   @InjectCore() core!: API.IBKCore;
@@ -1261,7 +1258,7 @@ export class BkOnline implements IPlugin {
   }
 
   @EventHandler(EventsServer.ON_LOBBY_CREATE)
-  onServer_LobbyCreate(lobby: string) {    
+  onServer_LobbyCreate(lobby: string) {
     this.ModLoader.lobbyManager.createLobbyStorage(
       lobby, 
       this, 
@@ -1667,7 +1664,7 @@ export class BkOnline implements IPlugin {
 
     if (!needsUpdate) return;
 
-    let pData = new SyncVoxelNotes(packet.lobby, level, scene, map.notes, true);
+    let pData = new Net.SyncVoxelNotes(packet.lobby, level, scene, map.notes, true);
     this.ModLoader.serverSide.sendPacket(pData);
 
     this.ModLoader.logger.info('[Server] Updated: {Level Note Count}');
@@ -1709,6 +1706,7 @@ export class BkOnline implements IPlugin {
     if (!needUpdate) return;
     
     this.cDB.game_flags = data;
+    
     this.ModLoader.logger.info('[Client] Updated: {Game Flags}');
   }
 
