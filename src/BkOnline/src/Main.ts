@@ -875,74 +875,89 @@ export class BkOnline implements IPlugin {
     // Initializers
     let pData: Net.SyncLevelNumbered;
     let level = this.curLevel;
+    let addr = 0;
+    let ptr = 0;
+    let i = 0;
     let foundJinjo = false;
 
     // Actors (By Model ID)
-    switch (this.ModLoader.emulator.rdramRead32(this.ocollision_addr)) {
-      case 0x06d6: // Notes
-        this.oNoteCount += 1;
-        if (this.cDB.level_data[level].onotes < this.oNoteCount) {
-          this.cDB.level_data[level].onotes = this.oNoteCount;
-          pData = new Net.SyncLevelNumbered(
-            this.ModLoader.clientLobby,
-            'SyncObjectNotes',
-            level,
-            this.cDB.level_data[level].onotes,
-            false
-          );
-          this.ModLoader.clientSide.sendPacket(pData);
-        }
-        break;
-      
-      case 0x03C0: // Blue Jinjo
-        this.cDB.level_data[level].jinjos |= 1 << 0;
-        foundJinjo = true;
-        break;
+    for (i = 0; i < 5; i++) {
+      addr = this.ocollision_addr + (i * 4);
 
-      case 0x03C2: // Green Jinjo
-        this.cDB.level_data[level].jinjos |= 1 << 1;
-        foundJinjo = true;
-        break;
-
-      case 0x03BC: // Orange Jinjo
-        this.cDB.level_data[level].jinjos |= 1 << 2;
-        foundJinjo = true;
-        break;
-
-      case 0x03C1: // Pink Jinjo
-        this.cDB.level_data[level].jinjos |= 1 << 3;
-        foundJinjo = true;
-        break;
-
-      case 0x03BB: // Yellow Jinjo
-        this.cDB.level_data[level].jinjos |= 1 << 4;
-        foundJinjo = true;
-        break;
-    }
-
-    // Voxels (By Struct)
-    let ptr = this.ModLoader.emulator.dereferencePointer(this.vcollision_addr);
-    if (ptr !== 0) {
-      let name = '';
-
-      switch (this.ModLoader.emulator.rdramRead16(ptr)) {
-        case 0x1640: // Notes
-          name += this.ModLoader.emulator.rdramRead16(ptr + 0x04) +
-                  this.ModLoader.emulator.rdramRead16(ptr + 0x06) +
-                  this.ModLoader.emulator.rdramRead16(ptr + 0x08);
-          if (!this.cDB.level_data[level].scene[scene].notes.includes(name)) {
-            this.cDB.level_data[level].scene[scene].notes.push(name);
-            let pData = new Net.SyncVoxelNotes(
+      switch (this.ModLoader.emulator.rdramRead32(addr)) {
+        case 0x06d6: // Notes
+          this.oNoteCount += 1;
+          if (this.cDB.level_data[level].onotes < this.oNoteCount) {
+            this.cDB.level_data[level].onotes = this.oNoteCount;
+            pData = new Net.SyncLevelNumbered(
               this.ModLoader.clientLobby,
+              'SyncObjectNotes',
               level,
-              scene,
-              this.cDB.level_data[level].scene[scene].notes,
+              this.cDB.level_data[level].onotes,
               false
             );
             this.ModLoader.clientSide.sendPacket(pData);
-          } 
+          }
+          break;
+        
+        case 0x03C0: // Blue Jinjo
+          this.cDB.level_data[level].jinjos |= 1 << 0;
+          foundJinjo = true;
+          break;
+
+        case 0x03C2: // Green Jinjo
+          this.cDB.level_data[level].jinjos |= 1 << 1;
+          foundJinjo = true;
+          break;
+
+        case 0x03BC: // Orange Jinjo
+          this.cDB.level_data[level].jinjos |= 1 << 2;
+          foundJinjo = true;
+          break;
+
+        case 0x03C1: // Pink Jinjo
+          this.cDB.level_data[level].jinjos |= 1 << 3;
+          foundJinjo = true;
+          break;
+
+        case 0x03BB: // Yellow Jinjo
+          this.cDB.level_data[level].jinjos |= 1 << 4;
+          foundJinjo = true;
           break;
       }
+      
+      this.ModLoader.emulator.rdramWrite32(addr, 0);
+    }
+
+    // Voxels (By Struct)
+    for (i = 0; i < 5; i++) {
+      addr = this.vcollision_addr + (i * 4);
+
+      ptr = this.ModLoader.emulator.dereferencePointer(addr);
+      if (ptr !== 0) {
+        let name = '';
+
+        switch (this.ModLoader.emulator.rdramRead16(ptr)) {
+          case 0x1640: // Notes
+            name += this.ModLoader.emulator.rdramRead16(ptr + 0x04) +
+                    this.ModLoader.emulator.rdramRead16(ptr + 0x06) +
+                    this.ModLoader.emulator.rdramRead16(ptr + 0x08);
+            if (!this.cDB.level_data[level].scene[scene].notes.includes(name)) {
+              this.cDB.level_data[level].scene[scene].notes.push(name);
+              let pData = new Net.SyncVoxelNotes(
+                this.ModLoader.clientLobby,
+                level,
+                scene,
+                this.cDB.level_data[level].scene[scene].notes,
+                false
+              );
+              this.ModLoader.clientSide.sendPacket(pData);
+            } 
+            break;
+        }
+      }
+
+      this.ModLoader.emulator.rdramWrite32(addr, 0);
     }
 
     // Handle jinjo from voxel OR model.
@@ -956,9 +971,6 @@ export class BkOnline implements IPlugin {
       );
       this.ModLoader.clientSide.sendPacket(pData);
     }
-    
-    this.ModLoader.emulator.rdramWrite32(this.ocollision_addr, 0);
-    this.ModLoader.emulator.rdramWrite32(this.vcollision_addr, 0);
   }
 
   handle_permanence_counts() {
@@ -1190,8 +1202,8 @@ export class BkOnline implements IPlugin {
     this.beta_menu_addr = global.ModLoader[API.AddressType.BETA_MENU];
     this.collision_addr = global.ModLoader[API.AddressType.RT_COLLISION_PTR];
     this.level_lookup_addr = global.ModLoader[API.AddressType.RT_CUR_LEVEL_LOOKUP];
-    this.ocollision_addr = 0x401100;
-    this.vcollision_addr = 0x401104;
+    this.ocollision_addr = 0x401180;
+    this.vcollision_addr = 0x401100;
     this.voxel_arr_addr = global.ModLoader[API.AddressType.RT_VOXEL_ARRAY_PTR];    
     this.voxel_cnt_addr = global.ModLoader[API.AddressType.RT_VOXEL_COUNT_PTR];    
   }

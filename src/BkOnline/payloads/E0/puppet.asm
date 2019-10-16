@@ -204,63 +204,86 @@ SW a0 0x20(sp)
 SW a1 0x1C(sp)
 SW a2 0x18(sp)
 SW at 0x14(sp)
+SW s1 0x10(sp)
+SW s2 0x08(sp)
+SW s3 0x04(sp)
 
+//run normal collision code
 JAL @collisionFunc
 NOP
 
 
 //note despawn
-LI a0 @collisionPtr
-LW a0 0(a0)
-BEQ a0 zero noteCheckFunc_housekeeping
-MOV a2 a0 //duplicate voxObjPtr
+LI s1 @collisionPtr
+LI s2 0
+LI s3 0
 
-//check is simpObj or actorObj
-LW a0 0(a0) 
-LUI a1 0x8000
-AND a1 a0 a1
-BEQ a1 zero noteCheckFunc_simpObj
-NOP
+noteCheckFunc_allCollLoop:
+    LW a0 0(s1)
+    BEQ a0 zero noteCheckFunc_housekeeping
+    MOV a2 a0 //duplicate voxObjPtr
 
-//ACTOR OBJ
-//check actor collsion
-JAL @get_objType2_actorPtr
-MOV a2 a0
+    //check is simpObj or actorObj
+    LW a0 0(a0) 
+    LUI a1 0x8000
+    AND a1 a0 a1
+    BEQ a1 zero noteCheckFunc_simpObj
+    NOP
 
-LW a0 0x10(v0)
-ANDI a0 a0 0x0001
-BEQ a0 zero noteCheckFunc_printVal
-nop
+    //ACTOR OBJ
+    //check actor collsion
+    JAL @get_objType2_actorPtr
+    MOV a2 a0
 
-LB a0 0xE8(v0)
-ANDI a0 1
-BEQ a0 zero noteCheckFunc_housekeeping
-nop
+    LW a0 0x10(v0)
+    ANDI a0 a0 0x0001
+    BEQ a0 zero noteCheckFunc_printVal
+    nop
 
-noteCheckFunc_printVal:
-LH a2 0x3E(a2)
-SRL a2 a2 2
-ANDI a2 a2 0x00000FFF
+    LB a0 0xE8(v0)
+    ANDI a0 1
+    BEQ a0 zero noteCheckFunc_endLoopCheck
+    nop
 
-LA a1 ourCollider
-B noteCheckFunc_housekeeping
-SW a2 0(a1)
+    noteCheckFunc_printVal:
+    LH a2 0x3E(a2)
+    SRL a2 a2 2
+    ANDI a2 a2 0x00000FFF
+
+    LA a1 ourActorCollider
+    ADD a1 a1 s2
+    ADDIU s2 0x04
+    B noteCheckFunc_endLoopCheck
+    SW a2 0(a1)
 
 
 
 
-//VOXEL OBJ
-noteCheckFunc_simpObj:
-LA a1 ourCollider
-SW a2 4(a1)
+    //VOXEL OBJ
+    noteCheckFunc_simpObj:
+    LA a1 ourVoxelCollider
+    ADD a1 a1 s3
+    ADDIU s3 0x04
+    SW a2 0(a1)
+    
+    noteCheckFunc_endLoopCheck:
+    ADDIU s1 s1 0x04
+    B noteCheckFunc_allCollLoop
+    NOP
 
 
 noteCheckFunc_housekeeping:
+LA a1 ourColliderCount
+SW s2 0(a1)
+
 LW ra 0x24(sp)
 LW a0 0x20(sp)
 LW a1 0x1C(sp)
 LW a2 0x18(sp)
 LW at 0x14(sp)
+LW s1 0x10(sp)
+LW s2 0x08(sp)
+LW s3 0x04(sp)
 ADDIU sp 0x28
 JR
 NOP
@@ -398,6 +421,12 @@ objCommandArray:
 .word 0
 .word 0
 
+.org 0x804010FC
+ourColliderCount:
+.word 0
 .org 0x80401100
-ourCollider:
+ourVoxelCollider:
+.word 0
+.org 0x80401180
+ourActorCollider:
 .word 0
