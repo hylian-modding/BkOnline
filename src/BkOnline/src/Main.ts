@@ -1105,6 +1105,10 @@ export class BkOnline implements IPlugin {
             this.delete_actor(ptr);
           }
           break;
+
+        // Note Doors
+        default:
+          this.ModLoader.logger.info("ID[i] == " + id);
       }
       
       // Advance to next struct
@@ -1221,7 +1225,15 @@ export class BkOnline implements IPlugin {
   }
 
   onTick(): void {
-    if (!this.core.isPlaying() || this.core.runtime.is_cutscene()) return;
+    if (!this.core.isPlaying() || this.core.runtime.is_cutscene()) {
+      // Cutscene skip (Needs addresses embedded to core)
+      this.ModLoader.emulator.rdramWrite8(0x80383D20, 0x11);
+      this.ModLoader.emulator.rdramWrite8(0x80383D98, 0x11);
+      this.ModLoader.emulator.rdramWrite8(0x80383E10, 0x11);
+      this.ModLoader.emulator.rdramWrite8(0x80383E88, 0x11);         
+
+      return;
+    }
 
     // Initializers
     let transitState = this.core.runtime.get_transition_state();
