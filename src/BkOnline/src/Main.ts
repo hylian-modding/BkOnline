@@ -783,10 +783,12 @@ export class BkOnline implements IPlugin {
 
     // Dont update while these cutscenes are active!
     if (
+      (evt & (1 << API.EventLevelBMP.CUTSCENE_MM_OPENING)) ||
       (evt & (1 << API.EventLevelBMP.CUTSCENE_TTC_OPENING)) ||
+      (evt & (1 << API.EventLevelBMP.CUTSCENE_CC_OPENING)) ||
       (evt & (1 << API.EventLevelBMP.CUTSCENE_BGS_OPENING)) ||
       (evt & (1 << API.EventLevelBMP.CUTSCENE_RBB_ENGINE_ROOM_RIGHT)) ||
-      (evt & (1 << API.EventLevelBMP.CUTSCENE_RBB_ENGINE_ROOM_RIGHT)) ||
+      (evt & (1 << API.EventLevelBMP.CUTSCENE_RBB_ENGINE_ROOM_LEFT)) ||
       (evt & (1 << API.EventLevelBMP.CUTSCENE_TTC_SANDCASTLE_WATER_LOWERED)) ||
       (evt & (1 << API.EventLevelBMP.CUTSCENE_GV_MOTE_FILLED_CUTSCENE))
     ) return;
@@ -1228,7 +1230,7 @@ export class BkOnline implements IPlugin {
       this.ModLoader.emulator.rdramWrite8(0x80383D20, 0x11);
       this.ModLoader.emulator.rdramWrite8(0x80383D98, 0x11);
       this.ModLoader.emulator.rdramWrite8(0x80383E10, 0x11);
-      this.ModLoader.emulator.rdramWrite8(0x80383E88, 0x11);         
+      this.ModLoader.emulator.rdramWrite8(0x80383E88, 0x11);
 
       return;
     }
