@@ -1106,9 +1106,7 @@ export class BkOnline implements IPlugin {
           }
           break;
 
-        // Note Doors
         default:
-          this.ModLoader.logger.info("ID[i] == " + id);
       }
       
       // Advance to next struct
