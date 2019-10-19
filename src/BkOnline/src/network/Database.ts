@@ -10,7 +10,15 @@ export class Database {
   moves: number = 0;
 }
 
-export class DatabaseClient extends Database {}
+export class DatabaseClient extends Database {
+  inst_reset: boolean = false;
+  inst_pos_x: number = 0;
+  inst_pos_y: number = 0;
+  inst_pos_z: number = 0;
+  inst_rot_x: number = 0;
+  inst_rot_y: number = 0;
+  inst_rot_z: number = 0;
+}
 
 export class DatabaseServer extends Database {
   // Puppets

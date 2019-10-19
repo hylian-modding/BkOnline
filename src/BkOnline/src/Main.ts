@@ -109,6 +109,13 @@ export class BkOnline implements IPlugin {
     return result;
   }
 
+  get_flag(buf:Buffer, offset: number): boolean {
+    let byte = Math.floor(offset / 8);
+    let bit = offset % 8;
+
+    return (buf[byte] & (1 << bit)) !== 0;
+  }
+
   set_flags(buf: Buffer, offset: number, count: number, val: number) {
     let byteOff: number;
     let bitOff: number;
@@ -248,8 +255,8 @@ export class BkOnline implements IPlugin {
     this.eventsS = 0;
   }
 
-  handle_puppets(scene: API.SceneType, isLoading: boolean, inTransit: boolean) {
-    if (isLoading) {
+  handle_puppets(scene: API.SceneType, isLoading: boolean, inTransit: boolean, forceReload: boolean) {
+    if (isLoading || forceReload) {
       this.pMgr.set_scene(API.SceneType.UNKNOWN);
     } else {
       this.pMgr.set_scene(scene);
@@ -543,11 +550,16 @@ export class BkOnline implements IPlugin {
     let count: number;
     let val: number;
     let needUpdate = false;
+    let needRefresh = false;
+
 
     bufData = this.core.save.game_flags.get_all();
     bufStorage = this.cDB.game_flags;
     count = bufData.byteLength;
     needUpdate = false;
+
+    // Map refresh check
+    needRefresh = this.handle_refresh_check(bufData, bufStorage);
 
     for (i = 0; i < count; i++) {
       if (i === 4) continue; // RBB water level
@@ -595,6 +607,196 @@ export class BkOnline implements IPlugin {
       this.handle_puzzle_count(bufData, bufStorage);
       this.handle_mumbo_token_paid_count(bufData);
     }
+
+    if (needRefresh) {
+      this.cDB.inst_reset = true;
+      this.cDB.inst_pos_x = this.core.player.pos_x;
+      this.cDB.inst_pos_y = this.core.player.pos_y;
+      this.cDB.inst_pos_z = this.core.player.pos_z;
+      this.cDB.inst_rot_x = this.core.player.rot_x;
+      this.cDB.inst_rot_y = this.core.player.rot_y;
+      this.cDB.inst_rot_z = this.core.player.rot_z;      
+      this.core.runtime.goto_scene(this.curScene, this.core.runtime.current_exit);
+    }
+  }
+
+  handle_refresh_check(bufData: Buffer, bufStorage: Buffer): boolean {
+    let needRefresh = false;
+
+    switch(this.curLevel) {
+      case API.LevelType.GRUNTILDAS_LAIR:
+        
+        // Entrance Room / Mumbos Mountain Lobby
+        if (this.curScene === API.SceneType.GL_LOBBY_MM) {
+          // Mumbos Mountain Entrance
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_MM) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_MM))
+              { needRefresh = true; break; }
+
+          // 50 Note Door
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_NOTE_DOOR_50) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_NOTE_DOOR_50))
+              { needRefresh = true; break; }
+        }
+
+        // Pipe Room / 180 Note Door Hill
+        else if (this.curScene === API.SceneType.GL_NOTE_DOOR_180) {
+          // 180 Note Door
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_NOTE_DOOR_180) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_NOTE_DOOR_180))
+              { needRefresh = true; break; }
+        }
+
+        // Treasure Trove Cove Lobby
+        else if (this.curScene === API.SceneType.GL_LOBBY_TTC) {
+          // Treasure Trove Cove Entrance
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_TTC) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_TTC))
+              { needRefresh = true; break; }
+        }
+
+        // Clankers Cavern Lobby
+        else if (this.curScene === API.SceneType.GL_LOBBY_CC) {
+          // Clankers Cavern Entrance
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_CC) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_CC))
+              { needRefresh = true; break; }
+        }
+
+        // Witch Statue / 260 Note Door
+        else if (this.curScene === API.SceneType.GL_WITCH_STATUE) {
+          // 260 Note Door
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_NOTE_DOOR_260) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_NOTE_DOOR_260))
+              { needRefresh = true; break; }
+        }
+
+        // Bubble Gloop Swamp Lobby
+        else if (this.curScene === API.SceneType.GL_LOBBY_BGS) {
+          // Bubble Gloop Swamp Entrance
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_BGS) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_BGS))
+              { needRefresh = true; break; }
+        }
+
+        // Gobey's Valley Lobby
+        else if (this.curScene === API.SceneType.GL_LOBBY_GV) {
+          // Gobey's Valley Entrance
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_GV) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_GV))
+              { needRefresh = true; break; }
+        }
+
+        // Witch Head 350 Note Door / Freezeezy Peeks Lobby / 450 Note Door
+        else if (this.curScene === API.SceneType.GL_LOBBY_FP) {
+          // 350 Note Door
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_NOTE_DOOR_350) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_NOTE_DOOR_350))
+              { needRefresh = true; break; }
+
+          // Freezeezy Peeks Entrance
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_FP) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_FP))
+              { needRefresh = true; break; }
+              
+          // 450 Note Door
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_NOTE_DOOR_450) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_NOTE_DOOR_450))
+              { needRefresh = true; break; }
+        }
+        
+        // Mad Monster Mansion Lobby
+        else if (this.curScene === API.SceneType.GL_LOBBY_MMM) {
+          // Mad Monster Mansion Entrance
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_MMM) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_MMM))
+              { needRefresh = true; break; }
+        }
+        
+        // Water Tunnel / 640 Note Door
+        else if (this.curScene === API.SceneType.GL_NOTE_DOOR_640) {
+          // 640 Note Door
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_NOTE_DOOR_640) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_NOTE_DOOR_640))
+              { needRefresh = true; break; }
+        }
+
+        // Rusty Bucket Bay Lobby
+        else if (this.curScene === API.SceneType.GL_LOBBY_RBB) {
+          // Rusty Bucket Bay Entrance
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_RBB) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_RBB))
+              { needRefresh = true; break; }
+        }
+        
+        // Click Clock Woods Lobby / 765 Note Door
+        else if (this.curScene === API.SceneType.GL_LOBBY_CCW) {
+          // Click Clock Woods Entrance
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_CCW) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_CCW))
+              { needRefresh = true; break; }
+          
+          // 765 Note Door
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_NOTE_DOOR_765) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_NOTE_DOOR_765))
+              { needRefresh = true; break; }
+        }
+        
+        // Click Clock Wood Season Lobby
+        else if (this.curScene === API.SceneType.CCW_MAIN) {
+          // Spring Entrance
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_DOOR_CCW_SPRING) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_DOOR_CCW_SPRING))
+              { needRefresh = true; break; }
+              
+          // Summer Entrance
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_DOOR_CCW_SUMMER) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_DOOR_CCW_SUMMER))
+              { needRefresh = true; break; }
+              
+          // Autumn Entrance
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_DOOR_CCW_AUTUMN) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_DOOR_CCW_AUTUMN))
+              { needRefresh = true; break; }
+              
+          // Winter Entrance
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_DOOR_CCW_WINTER) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_DOOR_CCW_WINTER))
+              { needRefresh = true; break; }
+        }
+
+        // Gruntilda Lair Boss Door Room
+        else if (this.curScene === API.SceneType.GL_DINGPOT) {
+          // Boss Door Entrance
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_DOOR_GL_CRYPT) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_NOTE_DOOR_810))
+              { needRefresh = true; break; }
+
+          // Note Door 810
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_NOTE_DOOR_810) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_NOTE_DOOR_810))
+              { needRefresh = true; break; }
+
+          // Note Door 828
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_NOTE_DOOR_828) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_NOTE_DOOR_828))
+              { needRefresh = true; break; }
+
+          // Note Door 846
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_NOTE_DOOR_846) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_NOTE_DOOR_846))
+              { needRefresh = true; break; }
+
+          // Note Door 882
+          if (!this.get_flag(bufData, API.GameBMP.OPEN_NOTE_DOOR_882) && 
+              this.get_flag(bufStorage, API.GameBMP.OPEN_NOTE_DOOR_882))
+              { needRefresh = true; break; }
+        }
+
+        break;      
+    }
+    
+    return needRefresh;
   }
 
   handle_honeycomb_flags(bufData: Buffer, bufStorage: Buffer) {
@@ -1225,23 +1427,50 @@ export class BkOnline implements IPlugin {
   }
 
   onTick(): void {
-    if (!this.core.isPlaying() || this.core.runtime.is_cutscene()) {
-      // Cutscene skip (Needs addresses embedded to core)
-      this.ModLoader.emulator.rdramWrite8(0x80383D20, 0x11);
-      this.ModLoader.emulator.rdramWrite8(0x80383D98, 0x11);
-      this.ModLoader.emulator.rdramWrite8(0x80383E10, 0x11);
-      this.ModLoader.emulator.rdramWrite8(0x80383E88, 0x11);
+    let isPlaying = this.core.isPlaying();
+    let isCutscene = this.core.runtime.is_cutscene();
+    if (!isPlaying || isCutscene) {
+      if (!isPlaying) {
+        // Cutscene skip (Needs addresses embedded to core)
+        this.ModLoader.emulator.rdramWrite8(0x80383D20, 0x11);
+        this.ModLoader.emulator.rdramWrite8(0x80383D98, 0x11);
+        this.ModLoader.emulator.rdramWrite8(0x80383E10, 0x11);
+        this.ModLoader.emulator.rdramWrite8(0x80383E88, 0x11);
+      }
 
       return;
     }
 
     // Initializers
+    let bufStorage: Buffer;
+    let bufData: Buffer;
     let transitState = this.core.runtime.get_transition_state();
     let scene: API.SceneType = this.core.runtime.current_scene;
     let inTransit: boolean = !(transitState === 0 || transitState === 4);
     let isLoading: boolean = this.core.runtime.is_loading();
-    let bufStorage: Buffer;
-    let bufData: Buffer;
+    let forceReload: boolean = false;
+
+    // Doing level refresh
+    if (this.cDB.inst_reset) {
+      // Move player
+      this.core.player.pos_x = this.cDB.inst_pos_x;
+      this.core.player.pos_y = this.cDB.inst_pos_y;
+      this.core.player.pos_z = this.cDB.inst_pos_z;
+      this.core.player.rot_x = this.cDB.inst_rot_x;
+      this.core.player.rot_y = this.cDB.inst_rot_y;
+      this.core.player.rot_z = this.cDB.inst_rot_z;
+
+      // Clear all values marking reset complete
+      this.cDB.inst_pos_x = 0;
+      this.cDB.inst_pos_y = 0;
+      this.cDB.inst_pos_z = 0;
+      this.cDB.inst_rot_x = 0;
+      this.cDB.inst_rot_y = 0;
+      this.cDB.inst_rot_z = 0;
+      this.cDB.inst_reset = false;
+
+      forceReload = true;
+    }
     
     // Activate Gruntilda Lair Menu Option
     if (this.curLevel !== API.LevelType.GRUNTILDAS_LAIR &&
@@ -1251,7 +1480,7 @@ export class BkOnline implements IPlugin {
     // General Setup/Handlers
     this.handle_scene_change(scene);
     this.read_events();
-    this.handle_puppets(scene, isLoading, inTransit);
+    this.handle_puppets(scene, isLoading, inTransit, forceReload);
 
     // Progress Flags Handlers
     this.handle_game_flags(bufData!, bufStorage!);
