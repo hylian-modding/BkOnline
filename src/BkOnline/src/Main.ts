@@ -745,7 +745,7 @@ export class BkOnline implements IPlugin {
                 else if (this.curScene === API.SceneType.GL_DINGPOT) {
                     // Boss Door Entrance
                     if (!this.get_flag(bufData, API.GameBMP.OPEN_DOOR_GL_CRYPT) &&
-                        this.get_flag(bufStorage, API.GameBMP.OPEN_DOOR_GL_CRYPT)) { needRefresh = true; break; }
+                        this.get_flag(bufStorage, API.GameBMP.OPEN_NOTE_DOOR_810)) { needRefresh = true; break; }
 
                     // Note Door 810
                     if (!this.get_flag(bufData, API.GameBMP.OPEN_NOTE_DOOR_810) &&
