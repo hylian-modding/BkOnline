@@ -1,11 +1,11 @@
 {
   "name": "BkOnline",
-  "version": "0.9.10",
+  "version": "0.9.11",
   "description": "",
   "main": "BkOnline.js",
   "author": "SpiceyWolf, Mittenz",
   "credits": "denoflions, MelonSpeedruns",
   "license": "GPL3",
   "core": "BanjoKazooie",
-  "updateUrl": "https://raw.githubusercontent.com/hylian-modding/BkOnline/master/update.json"
+  "updateUrl": "https://www.dropbox.com/s/k4yw4c3g2yx1zzo/BKO.json?dl=1"
 }
