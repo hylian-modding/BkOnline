@@ -7,7 +7,5 @@
   "credits": "denoflions, MelonSpeedruns",
   "license": "GPL3",
   "core": "BanjoKazooie",
-  "dry": {
-    "extends": "./ModLoader64/package-dry.json"
-  }
+  "updateUrl": "https://raw.githubusercontent.com/hylian-modding/BkOnline/master/update.json"
 }

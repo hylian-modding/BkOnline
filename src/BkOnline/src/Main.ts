@@ -90,6 +90,23 @@ export class BkOnline implements IPlugin {
         }
     }
 
+    merge_bits(buf1: Buffer, buf2: Buffer): boolean {
+        let c1 = buf1.byteLength;
+        let c2 = buf2.byteLength;
+        let count = c1 > c2 ? c2 : c1;
+
+        let i: number;
+        let needUpdate = false;
+
+        for (i = 0; i < count; i++) {
+            if (buf1[i] === buf2[i]) continue;
+            buf1[i] |= buf2[i];
+            needUpdate = true;
+        }
+
+        return needUpdate;
+    }
+
     count_flags(buf: Buffer, offset: number, count: number): number {
         let result = 0;
         let byteOff: number;
@@ -771,96 +788,64 @@ export class BkOnline implements IPlugin {
     }
 
     handle_honeycomb_flags(bufData: Buffer, bufStorage: Buffer) {
-        // Initializers
-        let pData: Net.SyncBuffered;
-        let i: number;
-        let count = 0;
-        let needUpdate = false;
         bufData = this.core.save.honeycomb_flags.get_all();
         bufStorage = this.cDB.honeycomb_flags;
-        count = bufData.byteLength;
 
         // Detect Changes
-        for (i = 0; i < count; i++) {
-            if (bufData[i] === bufStorage[i]) continue;
-            bufData[i] |= bufStorage[i];
-            this.core.save.honeycomb_flags.set(i, bufData[i]);
-            needUpdate = true;
-        }
+        if (!this.merge_bits(bufData, bufStorage)) return;
 
-        // Process Changes
-        if (!needUpdate) return;
-
+        // Save Changes
+        this.core.save.honeycomb_flags.set_all(bufData);
         this.cDB.honeycomb_flags = bufData;
 
         // Sync totals
-        count = this.ModLoader.utils.utilBitCountBuffer(bufData, 0, 0);
+        let count = this.ModLoader.utils.utilBitCountBuffer(bufData, 0, 0);
         this.core.save.inventory.honeycombs = count % 6;
         this.core.save.inventory.health_upgrades = count / 6;
         this.core.runtime.current_health = count / 6 + 5;
 
-        pData = new Net.SyncBuffered(this.ModLoader.clientLobby, 'SyncHoneyCombFlags', bufData, false);
+        let pData = new Net.SyncBuffered(this.ModLoader.clientLobby, 'SyncHoneyCombFlags', bufData, false);
         this.ModLoader.clientSide.sendPacket(pData);
     }
 
     handle_jiggy_flags(bufData: Buffer, bufStorage: Buffer) {
-        // Initializers
-        let pData: Net.SyncBuffered;
-        let i: number;
-        let count = 0;
-        let needUpdate = false;
         bufData = this.core.save.jiggy_flags.get_all();
         bufStorage = this.cDB.jiggy_flags;
-        count = bufData.byteLength;
 
         // Detect Changes
-        for (i = 0; i < count; i++) {
-            if (bufData[i] === bufStorage[i]) continue;
-            bufData[i] |= bufStorage[i];
-            this.core.save.jiggy_flags.set(i, bufData[i]);
-            needUpdate = true;
-        }
+        let needUpdate = this.merge_bits(bufData, bufStorage);
 
         // Sync totals
-        count = this.ModLoader.utils.utilBitCountBuffer(bufData, 0, 0);
+        let count = this.ModLoader.utils.utilBitCountBuffer(bufData, 0, 0);
         this.core.save.inventory.jiggies = count - this.maxPuzzleCount;
 
-        // Process Changes
         if (!needUpdate) return;
 
+        // Save Changes
+        this.core.save.jiggy_flags.set_all(bufData);
         this.cDB.jiggy_flags = bufData;
-        pData = new Net.SyncBuffered(this.ModLoader.clientLobby, 'SyncJiggyFlags', bufData, false);
+
+        let pData = new Net.SyncBuffered(this.ModLoader.clientLobby, 'SyncJiggyFlags', bufData, false);
         this.ModLoader.clientSide.sendPacket(pData);
     }
 
     handle_mumbo_token_flags(bufData: Buffer, bufStorage: Buffer) {
-        // Initializers
-        let pData: Net.SyncBuffered;
-        let i: number;
-        let count = 0;
-        let needUpdate = false;
         bufData = this.core.save.mumbo_token_flags.get_all();
         bufStorage = this.cDB.mumbo_token_flags;
-        count = bufData.byteLength;
 
         // Detect Changes
-        for (i = 0; i < count; i++) {
-            if (bufData[i] === bufStorage[i]) continue;
-            bufData[i] |= bufStorage[i];
-            this.core.save.mumbo_token_flags.set(i, bufData[i]);
-            needUpdate = true;
-        }
+        if (!this.merge_bits(bufData, bufStorage)) return;
 
-        // Process Changes
-        if (!needUpdate) return;
-
+        // Save Changes
+        this.core.save.mumbo_token_flags.set_all(bufData);
         this.cDB.mumbo_token_flags = bufData;
-        pData = new Net.SyncBuffered(this.ModLoader.clientLobby, 'SyncMumboTokenFlags', bufData, false);
-        this.ModLoader.clientSide.sendPacket(pData);
-
+        
         // Sync totals
-        count = this.ModLoader.utils.utilBitCountBuffer(bufData, 0, 0);
+        let count = this.ModLoader.utils.utilBitCountBuffer(bufData, 0, 0);
         this.core.save.inventory.mumbo_tokens = count - this.maxTokensSpent;
+
+        let pData = new Net.SyncBuffered(this.ModLoader.clientLobby, 'SyncMumboTokenFlags', bufData, false);
+        this.ModLoader.clientSide.sendPacket(pData);
     }
 
     handle_note_totals(bufData: Buffer, bufStorage: Buffer) {
@@ -1426,7 +1411,7 @@ export class BkOnline implements IPlugin {
 
             // Invoke puppet reload
             forceReload = true;
-        } 
+        }
 
         // Activate Gruntilda Lair Menu Option
         if (this.curLevel !== API.LevelType.GRUNTILDAS_LAIR &&
@@ -1542,22 +1527,11 @@ export class BkOnline implements IPlugin {
         this.ModLoader.logger.info('[Server] Received: {Game Flags}');
 
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
-        let data: Buffer = sDB.game_flags;
-        let count: number = data.byteLength;
-        let i = 0;
-        let needUpdate = false;
 
-        for (i = 0; i < count; i++) {
-            if (data[i] === packet.value[i]) continue;
-            data[i] |= packet.value[i];
-            needUpdate = true;
-        }
+        // Detect Changes
+        if (!this.merge_bits(sDB.game_flags, packet.value)) return;
 
-        if (!needUpdate) return;
-
-        sDB.game_flags = data;
-
-        let pData = new Net.SyncBuffered(packet.lobby, 'SyncGameFlags', data, true);
+        let pData = new Net.SyncBuffered(packet.lobby, 'SyncGameFlags', sDB.game_flags, true);
         this.ModLoader.serverSide.sendPacket(pData);
 
         this.ModLoader.logger.info('[Server] Updated: {Game Flags}');
@@ -1568,22 +1542,11 @@ export class BkOnline implements IPlugin {
         this.ModLoader.logger.info('[Server] Received: {HoneyComb Flags}');
 
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
-        let data: Buffer = sDB.honeycomb_flags;
-        let count: number = data.byteLength;
-        let i = 0;
-        let needUpdate = false;
 
-        for (i = 0; i < count; i++) {
-            if (data[i] === packet.value[i]) continue;
-            data[i] |= packet.value[i];
-            needUpdate = true;
-        }
+        // Detect Changes
+        if (!this.merge_bits(sDB.honeycomb_flags, packet.value)) return;
 
-        if (!needUpdate) return;
-
-        sDB.honeycomb_flags = data;
-
-        let pData = new Net.SyncBuffered(packet.lobby, 'SyncHoneyCombFlags', data, true);
+        let pData = new Net.SyncBuffered(packet.lobby, 'SyncHoneyCombFlags', sDB.honeycomb_flags, true);
         this.ModLoader.serverSide.sendPacket(pData);
 
         this.ModLoader.logger.info('[Server] Updated: {HoneyComb Flags}');
@@ -1594,22 +1557,11 @@ export class BkOnline implements IPlugin {
         this.ModLoader.logger.info('[Server] Received: {Jiggy Flags}');
 
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
-        let data: Buffer = sDB.jiggy_flags;
-        let count: number = data.byteLength;
-        let i = 0;
-        let needUpdate = false;
 
-        for (i = 0; i < count; i++) {
-            if (data[i] === packet.value[i]) continue;
-            data[i] |= packet.value[i];
-            needUpdate = true;
-        }
+        // Detect Changes
+        if (!this.merge_bits(sDB.jiggy_flags, packet.value)) return;
 
-        if (!needUpdate) return;
-
-        sDB.jiggy_flags = data;
-
-        let pData = new Net.SyncBuffered(packet.lobby, 'SyncJiggyFlags', data, true);
+        let pData = new Net.SyncBuffered(packet.lobby, 'SyncJiggyFlags', sDB.jiggy_flags, true);
         this.ModLoader.serverSide.sendPacket(pData);
 
         this.ModLoader.logger.info('[Server] Updated: {Jiggy Flags}');
@@ -1634,22 +1586,11 @@ export class BkOnline implements IPlugin {
         this.ModLoader.logger.info('[Server] Received: {Mumbo Token Flags}');
 
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
-        let data: Buffer = sDB.mumbo_token_flags;
-        let count: number = data.byteLength;
-        let i = 0;
-        let needUpdate = false;
 
-        for (i = 0; i < count; i++) {
-            if (data[i] === packet.value[i]) continue;
-            data[i] |= packet.value[i];
-            needUpdate = true;
-        }
+        // Detect Changes
+        if (!this.merge_bits(sDB.mumbo_token_flags, packet.value)) return;
 
-        if (!needUpdate) return;
-
-        sDB.mumbo_token_flags = data;
-
-        let pData = new Net.SyncBuffered(packet.lobby, 'SyncMumboTokenFlags', data, true);
+        let pData = new Net.SyncBuffered(packet.lobby, 'SyncMumboTokenFlags', sDB.mumbo_token_flags, true);
         this.ModLoader.serverSide.sendPacket(pData);
 
         this.ModLoader.logger.info('[Server] Updated: {Mumbo Token Flags}');
@@ -1901,20 +1842,8 @@ export class BkOnline implements IPlugin {
     onClient_SyncGameFlags(packet: Net.SyncBuffered) {
         this.ModLoader.logger.info('[Client] Received: {Game Flags}');
 
-        let data: Buffer = this.cDB.game_flags;
-        let count: number = data.byteLength;
-        let i = 0;
-        let needUpdate = false;
-
-        for (i = 0; i < count; i++) {
-            if (data[i] === packet.value[i]) continue;
-            data[i] |= packet.value[i];
-            needUpdate = true;
-        }
-
-        if (!needUpdate) return;
-
-        this.cDB.game_flags = data;
+        // Detect Changes
+        if (!this.merge_bits(this.cDB.game_flags, packet.value)) return;
 
         this.ModLoader.logger.info('[Client] Updated: {Game Flags}');
     }
@@ -1923,20 +1852,9 @@ export class BkOnline implements IPlugin {
     onClient_SyncHoneyCombFlags(packet: Net.SyncBuffered) {
         this.ModLoader.logger.info('[Client] Received: {HoneyComb Flags}');
 
-        let data: Buffer = this.cDB.honeycomb_flags;
-        let count: number = data.byteLength;
-        let i = 0;
-        let needUpdate = false;
+        // Detect Changes
+        if (!this.merge_bits(this.cDB.honeycomb_flags, packet.value)) return;
 
-        for (i = 0; i < count; i++) {
-            if (data[i] === packet.value[i]) continue;
-            data[i] |= packet.value[i];
-            needUpdate = true;
-        }
-
-        if (!needUpdate) return;
-
-        this.cDB.honeycomb_flags = data;
         this.needDeleteActors = true;
 
         this.ModLoader.logger.info('[Client] Updated: {HoneyComb Flags}');
@@ -1945,19 +1863,10 @@ export class BkOnline implements IPlugin {
     @NetworkHandler('SyncJiggyFlags')
     onClient_SyncJiggyFlags(packet: Net.SyncBuffered) {
         this.ModLoader.logger.info('[Client] Received: {Jiggy Flags}');
-        let data: Buffer = this.cDB.jiggy_flags;
-        let count: number = data.byteLength;
-        let i = 0;
-        let needUpdate = false;
+                
+        // Detect Changes
+        if (!this.merge_bits(this.cDB.jiggy_flags, packet.value)) return;
 
-        for (i = 0; i < count; i++) {
-            if (data[i] === packet.value[i]) continue;
-            data[i] |= packet.value[i];
-            needUpdate = true;
-        }
-        if (!needUpdate) return;
-
-        this.cDB.jiggy_flags = data;
         this.needDeleteActors = true;
 
         this.ModLoader.logger.info('[Client] Updated: {Jiggy Flags}');
@@ -1976,21 +1885,10 @@ export class BkOnline implements IPlugin {
     @NetworkHandler('SyncMumboTokenFlags')
     onClient_SyncMumboTokenFlags(packet: Net.SyncBuffered) {
         this.ModLoader.logger.info('[Client] Received: {Mumbo Token Flags}');
+        
+        // Detect Changes
+        if (!this.merge_bits(this.cDB.mumbo_token_flags, packet.value)) return;
 
-        let data: Buffer = this.cDB.mumbo_token_flags;
-        let count: number = data.byteLength;
-        let i = 0;
-        let needUpdate = false;
-
-        for (i = 0; i < count; i++) {
-            if (data[i] === packet.value[i]) continue;
-            data[i] |= packet.value[i];
-            needUpdate = true;
-        }
-
-        if (!needUpdate) return;
-
-        this.cDB.mumbo_token_flags = data;
         this.needDeleteActors = true;
 
         this.ModLoader.logger.info('[Client] Updated: {Mumbo Token Flags}');
