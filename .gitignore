@@ -1,1 +1,9 @@
+build/
+cores/
+dependencies/
+dist/
+libs/
 node_modules/
+roms/
+modloader64-config.json
+package-lock.json

@@ -14,7 +14,7 @@ import {
 } from 'modloader64_api/NetworkHandler';
 import { InjectCore } from 'modloader64_api/CoreInjection';
 import { Packet } from 'modloader64_api/ModLoaderDefaultImpls';
-import * as API from 'modloader64_api/BK/Imports';
+import * as API from 'BanjoKazooie/API/Imports';
 import * as Net from './network/Imports';
 import * as Puppet from './puppet/Imports';
 

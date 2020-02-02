@@ -1,5 +1,5 @@
 import IMemory from 'modloader64_api/IMemory';
-import * as API from 'modloader64_api/BK/Imports';
+import * as API from 'BanjoKazooie/API/Imports';
 
 export interface IData {
     pointer: number;

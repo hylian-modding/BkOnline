@@ -5,7 +5,7 @@ import { INetworkPlayer } from 'modloader64_api/NetworkHandler';
 import { Puppet } from './Puppet';
 import { Packet } from 'modloader64_api/ModLoaderDefaultImpls';
 import IMemory from 'modloader64_api/IMemory';
-import * as API from 'modloader64_api/BK/Imports';
+import * as API from 'BanjoKazooie/API/Imports';
 import * as Net from '../network/Packets';
 
 export class PuppetManager {
