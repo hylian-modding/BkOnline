@@ -57,7 +57,7 @@ export class SyncNumbered extends Packet {
 // #################################################
 
 export class SyncPuppet extends UDPPacket {
-    puppet: PData.IData;
+    puppet: PData.Data;
     constructor(lobby: string, value: PData.Data) {
         super('SyncPuppet', 'BkOnline', lobby, false);
         this.puppet = value;

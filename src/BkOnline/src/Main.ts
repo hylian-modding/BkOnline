@@ -274,9 +274,9 @@ export class BkOnline implements IPlugin {
 
     handle_puppets(scene: API.SceneType, isLoading: boolean, inTransit: boolean, forceReload: boolean) {
         if (isLoading || forceReload) {
-            this.pMgr.set_scene(API.SceneType.UNKNOWN);
+            this.pMgr.scene = API.SceneType.UNKNOWN;
         } else {
-            this.pMgr.set_scene(scene);
+            this.pMgr.scene = scene;
         }
 
         this.pMgr.onTick(
@@ -839,7 +839,7 @@ export class BkOnline implements IPlugin {
         // Save Changes
         this.core.save.mumbo_token_flags.set_all(bufData);
         this.cDB.mumbo_token_flags = bufData;
-        
+
         // Sync totals
         let count = this.ModLoader.utils.utilBitCountBuffer(bufData, 0, 0);
         this.core.save.inventory.mumbo_tokens = count - this.maxTokensSpent;
@@ -1863,7 +1863,7 @@ export class BkOnline implements IPlugin {
     @NetworkHandler('SyncJiggyFlags')
     onClient_SyncJiggyFlags(packet: Net.SyncBuffered) {
         this.ModLoader.logger.info('[Client] Received: {Jiggy Flags}');
-                
+
         // Detect Changes
         if (!this.merge_bits(this.cDB.jiggy_flags, packet.value)) return;
 
@@ -1885,7 +1885,7 @@ export class BkOnline implements IPlugin {
     @NetworkHandler('SyncMumboTokenFlags')
     onClient_SyncMumboTokenFlags(packet: Net.SyncBuffered) {
         this.ModLoader.logger.info('[Client] Received: {Mumbo Token Flags}');
-        
+
         // Detect Changes
         if (!this.merge_bits(this.cDB.mumbo_token_flags, packet.value)) return;
 
@@ -1953,8 +1953,15 @@ export class BkOnline implements IPlugin {
 
     @NetworkHandler('Request_Scene')
     onClient_RequestScene(packet: Packet) {
-        if (this.core.runtime === undefined || !this.core.isPlaying) return;
-        let pData = new Net.SyncLocation(packet.lobby, this.curLevel, this.curScene);
+        let level = -1;
+        let scene = -1;
+
+        if (!(this.core.runtime === undefined || !this.core.isPlaying)) {
+            level = this.curLevel;
+            scene = this.curScene;
+        }
+
+        let pData = new Net.SyncLocation(packet.lobby, level, scene);
         this.ModLoader.clientSide.sendPacketToSpecificPlayer(pData, packet.player);
     }
 

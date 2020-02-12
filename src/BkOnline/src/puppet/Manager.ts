@@ -37,9 +37,9 @@ export class PuppetManager {
         this.dummy = new Puppet(
             this.emu,
             this.commandBuffer,
-            0x0,
-            core.player,
             nplayer,
+            core.player,
+            0x0,
             -1
         );
         let addr = global.ModLoader['BK:puppet_address'] + 0x04;
@@ -47,7 +47,7 @@ export class PuppetManager {
         for (let i = 0; i < 16; i++) {
             offset = addr + i * 0x08 + 0x04;
             this.puppetArray.push(
-                new Puppet(emu, this.commandBuffer, offset, this.core.player, dummy, i)
+                new Puppet(emu, this.commandBuffer, dummy, this.core.player, offset, i)
             );
             this.emptyPuppetSlot.push(i);
         }
@@ -58,7 +58,7 @@ export class PuppetManager {
         for (let i = 0; i < this.puppetArray.length; i++) {
             this.puppetArray[i].scene = API.SceneType.UNKNOWN;
             this.puppetArray[i].nplayer = dummy;
-            this.puppetArray[i].despawn('reset');
+            this.puppetArray[i].despawn();
             this.emptyPuppetSlot.push(i);
         }
         this.playerToPuppetMap.clear();
@@ -75,7 +75,7 @@ export class PuppetManager {
         if (!this.playerToPuppetMap.has(nplayer.uuid)) return;
         let index = this.playerToPuppetMap.get(nplayer.uuid)!;
         let puppet: Puppet = this.puppetArray[index];
-        puppet.despawn('unregister puppet');
+        puppet.despawn();
         puppet.nplayer = dummy;
         puppet.scene = API.SceneType.UNKNOWN;
         this.playerToPuppetMap.delete(nplayer.uuid);
@@ -87,11 +87,10 @@ export class PuppetManager {
         this.emptyPuppetSlot.push(index);
     }
 
-    set_scene(scene: API.SceneType) {
-        // Dont duplicate work.
-        if (this.dummy.scene === scene) return;
-
-        // Set dummy scene.
+    get scene(): API.SceneType {
+        return this.dummy.scene;
+    }
+    set scene(scene: API.SceneType) {
         this.dummy.scene = scene;
     }
 
@@ -128,18 +127,19 @@ export class PuppetManager {
 
             // Make sure we should still spawn
             if (
-                this.dummy.scene !== API.SceneType.UNKNOWN &&
-                puppet.scene === this.dummy.scene
+                this.scene !== API.SceneType.UNKNOWN &&
+                puppet.scene === this.scene
             ) puppet.spawn();
         }
     }
 
     puppetsInScene() {
         let count = 0;
+        let scene = this.scene;
         for (let i = 0; i < this.puppetArray.length; i++) {
             if (
-                this.dummy.scene !== API.SceneType.UNKNOWN &&
-                this.puppetArray[i].scene === this.dummy.scene &&
+                scene !== API.SceneType.UNKNOWN &&
+                this.puppetArray[i].scene === scene &&
                 this.puppetArray[i].isSpawned
             ) count++;
         }
@@ -147,15 +147,16 @@ export class PuppetManager {
     }
 
     handleSpawnState() {
-        let meInScene = this.dummy.scene !== API.SceneType.UNKNOWN;
+        let meInScene = this.scene !== API.SceneType.UNKNOWN;
 
         if (meInScene) {
             // Perform normal checks.
             let puppetInScene: boolean;
             let puppetSpawned: boolean;
+            let scene = this.scene;
 
             for (let i = 0; i < this.puppetArray.length; i++) {
-                puppetInScene = this.puppetArray[i].scene === this.dummy.scene;
+                puppetInScene = this.puppetArray[i].scene === scene;
                 puppetSpawned = this.puppetArray[i].isSpawned;
                 if (puppetInScene && !puppetSpawned) {
                     // Needs Respawned.
@@ -163,14 +164,14 @@ export class PuppetManager {
                 } else if (
                     !puppetInScene && puppetSpawned) {
                     // Needs Despawned.
-                    this.puppetArray[i].despawn('handle spawn state they are spawned but not in scene!');
+                    this.puppetArray[i].despawn();
                 }
             }
         } else {
             // We aren't in scene, no one should be spawned!
             for (let i = 0; i < this.puppetArray.length; i++) {
                 if (this.puppetArray[i].isSpawned) {
-                    this.puppetArray[i].despawn('not in scene no one should be spawned!');
+                    this.puppetArray[i].despawn();
                 }
             }
         }

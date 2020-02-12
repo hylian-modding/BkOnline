@@ -1,21 +1,12 @@
 import IMemory from 'modloader64_api/IMemory';
 import * as API from 'BanjoKazooie/API/Imports';
 
-export interface IData {
-    pointer: number;
-    pos: Buffer;
-    anim: Buffer;
-    rot: Buffer;
-    scale: number;
-    model: number;
-}
-
-export class Data extends API.BaseObj implements IData {
+export class Data extends API.BaseObj implements Data {
     private readonly copyFields: string[] = new Array<string>();
     player: API.IPlayer;
     pointer: number;
-    model_id = 0x00;
-    broken = false;
+    model_id: number = 0x00;
+    broken: boolean = false;
 
     constructor(emu: IMemory, pointer: number, player: API.IPlayer) {
         super(emu);

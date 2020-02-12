@@ -23,9 +23,9 @@ export class Puppet extends API.BaseObj {
     constructor(
         emu: IMemory,
         commandBuffer: CommandBuffer,
-        pointer: number,
-        player: API.IPlayer,
         nplayer: INetworkPlayer,
+        player: API.IPlayer,
+        pointer: number,
         index: number
     ) {
         super(emu);
@@ -38,7 +38,7 @@ export class Puppet extends API.BaseObj {
         this.pointer = pointer;
     }
 
-    handleInstance(data: PData.IData) {
+    handleInstance(data: PData.Data) {
         if (!this.isSpawned || !this.canHandle) return;
         if (this.data.broken) return;
         Object.keys(data).forEach((key: string) => {
@@ -46,7 +46,7 @@ export class Puppet extends API.BaseObj {
         });
 
         // Broken puppet check
-        if (this.data.broken) this.despawn('broke check');
+        if (this.data.broken) this.despawn();
     }
 
     spawn() {
@@ -54,7 +54,6 @@ export class Puppet extends API.BaseObj {
         this.isSpawned = (ptr !== 0x000000);
         this.canHandle = false;
 
-        this.log('Spawn Called ' + ptr);
         if (this.isSpawned) {
             this.canHandle = true;
             return;
@@ -73,17 +72,17 @@ export class Puppet extends API.BaseObj {
                 this.emulator.rdramWriteBuffer(ptr + 0x1c, DEADBEEF);
                 this.isSpawned = true;
                 this.canHandle = true;
+                
                 this.log('Puppet spawned! ' + ptr.toString(16).toUpperCase());
             }
         );
     }
 
-    despawn(caller: string) {
+    despawn() {
         let ptr = this.emulator.dereferencePointer(this.pointer);
         this.isSpawned = (ptr !== 0x000000);
         this.canHandle = false;
 
-        this.log('Despawn Called: ' + caller + ptr);
         if (!this.isSpawned) return;
 
         this.commandBuffer.runCommand(
