@@ -1685,7 +1685,7 @@ export class BkOnline implements IPlugin {
     @ServerNetworkHandler('SyncPuppet')
     onServer_SyncPuppet(packet: Net.SyncPuppet) {
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
-        if (!sDB.hasOwnProperty("players") || sDB.players === null) return
+        if (sDB === null || sDB.players === null) return
         Object.keys(sDB.players).forEach((key: string) => {
             if (sDB.players[key] !== sDB.players[packet.player.uuid]) {
                 return;
