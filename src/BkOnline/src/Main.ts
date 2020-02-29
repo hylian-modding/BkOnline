@@ -1507,6 +1507,10 @@ export class BkOnline implements IPlugin {
     onServer_RequestStorage(packet: Packet): void {
         this.ModLoader.logger.info('[Server] Sending: {Lobby Storage}');
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+
+        // Safety check
+        if (sDB === null) return;
+
         let pData = new Net.SyncStorage(
             packet.lobby,
             sDB.game_flags,
@@ -1528,6 +1532,9 @@ export class BkOnline implements IPlugin {
 
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
 
+        // Safety check
+        if (sDB === null) return;
+
         // Detect Changes
         if (!this.merge_bits(sDB.game_flags, packet.value)) return;
 
@@ -1542,6 +1549,9 @@ export class BkOnline implements IPlugin {
         this.ModLoader.logger.info('[Server] Received: {HoneyComb Flags}');
 
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+
+        // Safety check
+        if (sDB === null) return;
 
         // Detect Changes
         if (!this.merge_bits(sDB.honeycomb_flags, packet.value)) return;
@@ -1558,6 +1568,9 @@ export class BkOnline implements IPlugin {
 
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
 
+        // Safety check
+        if (sDB === null) return;
+
         // Detect Changes
         if (!this.merge_bits(sDB.jiggy_flags, packet.value)) return;
 
@@ -1572,6 +1585,10 @@ export class BkOnline implements IPlugin {
         this.ModLoader.logger.info('[Server] Received: {Move Flags}');
 
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+
+        // Safety check
+        if (sDB === null) return;
+
         if (sDB.moves === packet.value) return;
         sDB.moves |= packet.value;
 
@@ -1587,6 +1604,9 @@ export class BkOnline implements IPlugin {
 
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
 
+        // Safety check
+        if (sDB === null) return;
+
         // Detect Changes
         if (!this.merge_bits(sDB.mumbo_token_flags, packet.value)) return;
 
@@ -1601,6 +1621,10 @@ export class BkOnline implements IPlugin {
         this.ModLoader.logger.info('[Server] Received: {Note Totals}');
 
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+
+        // Safety check
+        if (sDB === null) return;
+
         let data: Buffer = sDB.note_totals;
         let count: number = data.byteLength;
         let i = 0;
@@ -1628,6 +1652,10 @@ export class BkOnline implements IPlugin {
         this.ModLoader.logger.info('[Server] Received: {Jigsaws Completion}');
 
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+
+        // Safety check
+        if (sDB === null) return;
+
         let data: Buffer = sDB.jigsaws_completed;
         let count: number = data.byteLength;
         let i = 0;
@@ -1654,6 +1682,10 @@ export class BkOnline implements IPlugin {
         this.ModLoader.logger.info('[Server] Received: {Level Events}');
 
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+
+        // Safety check
+        if (sDB === null) return;
+
         if (sDB.level_events === packet.value) return;
         sDB.level_events |= packet.value;
 
@@ -1669,6 +1701,10 @@ export class BkOnline implements IPlugin {
     onServer_SyncLocation(packet: Net.SyncLocation) {
 
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+
+        // Safety check
+        if (sDB === null) return;
+
         let pMsg = 'Player[' + packet.player.nickname + ']';
         let lMsg = 'Level[' + API.LevelType[packet.level] + ']';
         let sMsg = 'Scene[' + API.SceneType[packet.scene] + ']';
@@ -1685,7 +1721,10 @@ export class BkOnline implements IPlugin {
     @ServerNetworkHandler('SyncPuppet')
     onServer_SyncPuppet(packet: Net.SyncPuppet) {
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+
+        // Safety check
         if (sDB === null || sDB.players === null) return
+
         Object.keys(sDB.players).forEach((key: string) => {
             if (sDB.players[key] !== sDB.players[packet.player.uuid]) {
                 return;
@@ -1710,6 +1749,10 @@ export class BkOnline implements IPlugin {
         this.ModLoader.logger.info('[Server] Received: {Jinjo}');
 
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+
+        // Safety check
+        if (sDB === null) return;
+
         let level = packet.level;
 
         // Ensure we have this level/scene data!
@@ -1776,6 +1819,10 @@ export class BkOnline implements IPlugin {
         this.ModLoader.logger.info('[Server] Received: {Level Note Count}');
 
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+
+        // Safety check
+        if (sDB === null) return;
+
         let level = packet.level;
 
         // Ensure we have this level/scene data!
@@ -1796,6 +1843,10 @@ export class BkOnline implements IPlugin {
         this.ModLoader.logger.info('[Server] Received: {Level Note Count}');
 
         let sDB: Net.DatabaseServer = this.ModLoader.lobbyManager.getLobbyStorage(packet.lobby, this) as Net.DatabaseServer;
+
+        // Safety check
+        if (sDB === null) return;
+
         let level = packet.level;
         let scene = packet.scene;
 
