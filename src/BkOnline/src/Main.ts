@@ -1358,13 +1358,13 @@ export class BkOnline implements IPlugin {
     }
 
     init(): void {
-        global.ModLoader['BK:puppet_address'] = 0x401000;
+        global.ModLoader['BK:puppet_address'] = 0xD01000;
         this.actor_arr_addr = global.ModLoader[API.AddressType.RT_ACTOR_ARRAY_PTR];
         this.beta_menu_addr = global.ModLoader[API.AddressType.BETA_MENU];
         this.collision_addr = global.ModLoader[API.AddressType.RT_COLLISION_PTR];
         this.level_lookup_addr = global.ModLoader[API.AddressType.RT_CUR_LEVEL_LOOKUP];
-        this.ocollision_addr = 0x401180;
-        this.vcollision_addr = 0x401100;
+        this.ocollision_addr = 0xD01180;
+        this.vcollision_addr = 0xD01100;
         this.voxel_arr_addr = global.ModLoader[API.AddressType.RT_VOXEL_ARRAY_PTR];
         this.voxel_cnt_addr = global.ModLoader[API.AddressType.RT_VOXEL_COUNT_PTR];
     }

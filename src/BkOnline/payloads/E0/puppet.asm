@@ -1,13 +1,5 @@
-//Boot map
-.org 0x8023DBAB
-.byte 0x91
 
 // HOOKS
-;PAUSE MODE JUMP LOCATION: 0x802E47F4
-;.org 0x802E47F4
-;JAL PauseMode
-;NOP
-
 ;NORMAL MODE JUMP LOCATION: 0x80334FFC
 .org 0x80334FFC
 JAL NormalModeCode
@@ -37,10 +29,10 @@ JAL puppetSpawnArrayAdd
 [collisionPtr]: 0x803820B8
 [collisionFunc]: 0x80303D78
 [get_objType2_actorPtr]: 0x80329958
-;----------------------------------------------------------------
-; Code Run from Pause Mode
-;----------------------------------------------------------------
-.org 0x80400100
+
+
+
+.org 0x80D00100
 
 ;----------------------------------------------------------------
 ; Code Run from Normal Mode
@@ -373,7 +365,7 @@ puppetID_struct:
 .word 0x00000000
 .word 0x00000000
 
-.org 0x80401000
+.org 0x80D01000
 
 .align
 maxPlayers:
@@ -421,12 +413,12 @@ objCommandArray:
 .word 0
 .word 0
 
-.org 0x804010FC
+.org 0x80D010FC
 ourColliderCount:
 .word 0
-.org 0x80401100
+.org 0x80D01100
 ourVoxelCollider:
 .word 0
-.org 0x80401180
+.org 0x80D01180
 ourActorCollider:
 .word 0
