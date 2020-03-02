@@ -44,5 +44,8 @@
   "bugs": {
     "url": "https://github.com/hylian-modding/BkOnline/issues"
   },
-  "homepage": "https://github.com/hylian-modding/BkOnline#readme"
+  "homepage": "https://github.com/hylian-modding/BkOnline#readme",
+  "modloader64_deps": {
+    "BanjoKazooie": "https://github.com/hylian-modding/Core-BanjoKazooie"
+  }
 }

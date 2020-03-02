@@ -1353,9 +1353,7 @@ export class BkOnline implements IPlugin {
 
     constructor() { }
 
-    preinit(): void {
-        this.pMgr = new Puppet.PuppetManager();
-    }
+    preinit(): void { this.pMgr = new Puppet.PuppetManager(); }
 
     init(): void {
         global.ModLoader['BK:puppet_address'] = 0xD01000;
