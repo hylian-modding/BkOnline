@@ -1,7 +1,6 @@
 import { CMD, CommandBuffer } from './Controller';
 import { INetworkPlayer } from 'modloader64_api/NetworkHandler';
 import IMemory from 'modloader64_api/IMemory';
-import uuid from 'uuid';
 import * as API from 'BanjoKazooie/API/Imports';
 import * as PData from './Instance';
 
@@ -32,7 +31,7 @@ export class Puppet extends API.BaseObj {
         this.data = new PData.Data(emu, pointer, player);
         this.commandBuffer = commandBuffer;
         this.nplayer = nplayer;
-        this.id = uuid.v4();
+        this.id = nplayer.uuid;
         this.scene = API.SceneType.UNKNOWN;
         this.index = index;
         this.pointer = pointer;

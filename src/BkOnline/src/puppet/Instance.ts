@@ -17,6 +17,7 @@ export class Data extends API.BaseObj implements Data {
         this.copyFields.push('rot');
         this.copyFields.push('model');
         this.copyFields.push('scale');
+        this.copyFields.push('visible_parts');
     }
 
     safetyCheck(): number {
@@ -107,12 +108,21 @@ export class Data extends API.BaseObj implements Data {
     get scale(): number {
         return this.player.scale;
     }
-
     set scale(val: number) {
         let ptr: number = this.safetyCheck();
         if (ptr === 0x000000) return;
 
         this.emulator.rdramWrite32(ptr + 0x0128, val);
+    }
+
+    get visible_parts(): Buffer {
+        return this.player.visible_parts;
+    }
+    set visible_parts(val: Buffer) {
+        let ptr: number = this.safetyCheck();
+        if (ptr === 0x000000) return;
+
+        this.emulator.rdramWriteBuffer(ptr + 0x84, val);
     }
 
     toJSON() {
