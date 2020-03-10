@@ -2,6 +2,7 @@ build/
 cores/
 dependencies/
 dist/
+external_cores/
 libs/
 node_modules/
 roms/
