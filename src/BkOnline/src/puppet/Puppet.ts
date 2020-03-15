@@ -67,8 +67,7 @@ export class Puppet extends API.BaseObj {
                     return;
                 }
 
-                let DEADBEEF: Buffer = Buffer.from('DEADBEEF', 'hex');
-                this.emulator.rdramWriteBuffer(ptr + 0x1c, DEADBEEF);
+                this.emulator.rdramWrite32(ptr + 0x1c, 0xdeadbeef);
                 this.isSpawned = true;
                 this.canHandle = true;
                 
