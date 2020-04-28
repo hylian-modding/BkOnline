@@ -999,6 +999,12 @@ export class BkOnline implements IPlugin {
                     evt |= 1 << API.EventSceneBMP.SM_FIST_TOP_BOTTLES_TALK;
                     evt |= 1 << API.EventSceneBMP.SM_END_TUTORIAL;
                 }
+            case API.SceneType.BGS_MAIN: {
+                evt &= 0xfb;
+            }
+            case API.SceneType.GV_MAIN: {
+                evt &= 0xfb;
+            }
         }
 
         // Only safe data will get through
