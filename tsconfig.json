@@ -13,6 +13,9 @@
     "moduleResolution": "node",
     "baseUrl": "./",
     "paths": {
+      "@BkOnline/*": [
+        "./src/BkOnline/*"
+      ],
       "BanjoKazooie/*": [
         "libs/BanjoKazooie/*"
       ]

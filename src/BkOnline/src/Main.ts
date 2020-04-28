@@ -2110,4 +2110,8 @@ export class BkOnline implements IPlugin {
 
         this.ModLoader.logger.info('[Client] Updated: {Level Note Count}');
     }
+
+    getServerURL(): string {
+        return "192.99.70.23:8010";
+    }
 }
