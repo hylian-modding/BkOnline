@@ -1,6 +1,7 @@
 import { INetworkPlayer } from 'modloader64_api/NetworkHandler';
 
 export class Dummy implements INetworkPlayer {
+    data: any = {};
     nickname = 'Dummy';
     uuid: string = 'Dummy';
 

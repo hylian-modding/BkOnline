@@ -13,11 +13,14 @@
     "moduleResolution": "node",
     "baseUrl": "./",
     "paths": {
+      "@sound/*": [
+        "./build/emulator/*"
+      ],
       "@BkOnline/*": [
         "./src/BkOnline/*"
       ],
       "BanjoKazooie/*": [
-        "libs/BanjoKazooie/*"
+        "libs\\BanjoKazooie/*"
       ]
     }
   },
@@ -26,7 +29,10 @@
     "test/**/*.ts",
     "mods/**/*.ts",
     "cores/**/*.ts",
-    "bin/paker.ts"
+    "bin/paker.ts",
+    "tools/**/*.ts",
+    "src/modloader/consoles/mupen/resources/test.js",
+    "API/src/IAnalyticsManager.ts"
   ],
   "exclude": [
     "node_modules",

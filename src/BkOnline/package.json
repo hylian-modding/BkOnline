@@ -1,13 +1,13 @@
 {
   "name": "BkOnline",
-  "version": "0.9.18",
+  "version": "0.9.19",
   "description": "",
   "main": "BkOnline.js",
   "author": "SpiceyWolf, Mittenz",
   "credits": "denoflions, MelonSpeedruns",
   "license": "GPL3",
   "core": "BanjoKazooie",
-  "updateUrl": "https://raw.githubusercontent.com/hylian-modding/BkOnline/master/update.json",
+  "updateUrl": "https://repo.modloader64.com/mods/BKO/update/update.json",
   "modloader64_deps": {
     "BanjoKazooie": "https://github.com/hylian-modding/Core-BanjoKazooie"
   }

@@ -1,6 +1,6 @@
 {
   "name": "BkOnline",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "This is the official repository.",
   "main": "index.js",
   "dependencies": {},
